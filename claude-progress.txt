@@ -8,7 +8,8 @@
 - **E2E**：[`frontend/playwright.config.ts`](frontend/playwright.config.ts) 自动拉起 uvicorn + `vite dev`；[`frontend/e2e/smoke.spec.ts`](frontend/e2e/smoke.spec.ts) 已跑通。
 - **报告/PDF**：`POST .../reports/docx|pdf`；PDF 无 LibreOffice 时 503；[`desktop/run-dev.ps1`](desktop/run-dev.ps1) 双进程开发。
 - **Tauri**：已在 `frontend/src-tauri` 集成 Tauri 2；`npm run tauri:dev` 经 `scripts/tauri-dev-bootstrap.mjs` 拉起后端+Vite；图标由 `npx tauri icon` 自 1024 PNG 生成。`feature_list` 中该项已 `true`。
-- **标准数字化（进行中）**：`config/standards/db31t444-2022/rules.yaml` 已改为带 `meta`、CJJ181 对齐缺陷表与 **MI=G×K×E**（不含 T）；维护说明见同目录 `README.md`。**表 8.2.3/8.2.4 全量与系数 0.7 等须对照 DB31 正式 PDF 终审**。
+- **模板与委托单**：已新增 [`templates/commission_fields.md`](templates/commission_fields.md)、[`templates/report/docxtpl-context.md`](templates/report/docxtpl-context.md)；报告渲染统一 `build_report_context`；仓库内生成 [`templates/report/jinja_minimal.docx`](templates/report/jinja_minimal.docx) 供默认导出。
+- **标准数字化（进行中）**：`config/standards/db31t444-2022/rules.yaml` 与 CJJ 181 对齐骨架见前文提交；表与系数须对照 DB31 正式 PDF 终审。
 - **Linux 常见报错**：`could not find openssl development headers` → 按 [`docs/TAURI.md`](docs/TAURI.md) 安装 `libssl-dev`、`pkg-config` 与 WebKit/GTK 依赖后再编译。若 `npm run tauri:dev` 提示找不到 venv 内 Python，已支持依次尝试 `.venv/bin/python` 与 `.venv/bin/python3`。
 
 ## 2026-05-06

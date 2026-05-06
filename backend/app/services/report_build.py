@@ -1,9 +1,11 @@
 """Assemble docx context from ORM."""
 from __future__ import annotations
 
+from datetime import date
+
 from sqlalchemy.orm import selectinload
 
-from app.models import Segment
+from app.models import Project, Segment
 
 
 def build_segments_body(segments: list[Segment]) -> str:
@@ -20,6 +22,27 @@ def build_segments_body(segments: list[Segment]) -> str:
             note = f" 备注:{d.note}" if d.note else ""
             lines.append(f"  · 缺陷 {d.defect_code} 等级{d.level} {k}{note}")
     return "\n".join(lines) if lines else "（暂无管段）"
+
+
+def build_report_context(
+    project: Project,
+    segments: list[Segment],
+    *,
+    report_date: date | None = None,
+) -> dict:
+    """与 `DocxTemplate.render` 对齐的键；CC01-2 范本合并时占位符须与之一致。"""
+    rd = report_date or date.today()
+    return {
+        "project_name": project.name,
+        "client_org": project.client_org or "",
+        "project_code": project.project_code or "",
+        "road_name": project.road_name or "",
+        "scope_text": project.scope_text or "",
+        "contact_name": project.contact_name or "",
+        "contact_phone": project.contact_phone or "",
+        "report_date": rd.isoformat(),
+        "body": build_segments_body(segments),
+    }
 
 
 def segment_loader_options():

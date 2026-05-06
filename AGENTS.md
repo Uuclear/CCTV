@@ -16,7 +16,7 @@
 | [`backend/`](backend/) | FastAPI、SQLite/PostgreSQL、视频/OCR/报告逻辑 |
 | [`frontend/`](frontend/) | React + Vite + TypeScript，视觉参考 animal-island-ui（自有 token，不默认装该 npm 包） |
 | [`config/standards/db31t444-2022/`](config/standards/db31t444-2022/) | 标准规则包；**维护与合规见其中 `README.md`** |
-| [`templates/`](templates/) | 委托单字段说明、报告模板（`jinja_minimal.docx` 用于自动生成；`CC01-2-base.docx` 为范本副本） |
+| [`templates/`](templates/) | [`commission_fields.md`](templates/commission_fields.md) 委托单↔模型↔docx；[`report/jinja_minimal.docx`](templates/report/jinja_minimal.docx) 默认母版；CC01-2 合并见模板目录 README |
 | [`desktop/run-dev.ps1`](desktop/run-dev.ps1) | Windows：同时启动后端与 Vite（非 Tauri） |
 | [`frontend/src-tauri/`](frontend/src-tauri/) | Tauri 2 壳；`cd frontend && npm run tauri:dev` |
 | [`scripts/tauri-dev-bootstrap.mjs`](scripts/tauri-dev-bootstrap.mjs) | Tauri dev：保证 API 就绪后启动 Vite（跨平台） |

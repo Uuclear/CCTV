@@ -14,7 +14,7 @@ from app.config import settings
 from app.db import get_db
 from app.models import Project, Segment
 from app.services.pdf_export import PdfExportError, docx_to_pdf
-from app.services.report_build import build_segments_body, segment_loader_options
+from app.services.report_build import build_report_context, segment_loader_options
 
 router = APIRouter(tags=["reports"])
 
@@ -38,16 +38,7 @@ async def render_project_docx(project_id: int, db: AsyncSession) -> Path:
     out_name = f"report_{date.today().isoformat()}_{uuid.uuid4().hex[:8]}.docx"
     out_path = out_dir / out_name
     doc = DocxTemplate(str(tpl))
-    doc.render(
-        {
-            "project_name": proj.name,
-            "client_org": proj.client_org or "",
-            "project_code": proj.project_code or "",
-            "road_name": proj.road_name or "",
-            "report_date": date.today().isoformat(),
-            "body": build_segments_body(segments),
-        },
-    )
+    doc.render(build_report_context(proj, segments, report_date=date.today()))
     doc.save(str(out_path))
     return out_path
 
