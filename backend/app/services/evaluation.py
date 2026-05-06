@@ -1,4 +1,4 @@
-"""Placeholder evaluation engine driven by rules.yaml (not official standard)."""
+"""Evaluation engine driven by rules.yaml (DB31/T 444-2022 + CJJ 181-aligned tables)."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -36,7 +36,14 @@ def defect_contribution(rules: dict[str, Any], code: str, level: int, kind: str)
     if code not in table:
         return 0.0
     by_level = table[code]
-    return float(by_level.get(level, by_level.get(str(level), 0.0)))
+    val = by_level.get(level)
+    if val is None:
+        val = by_level.get(str(level))
+    if val is None:
+        return 0.0
+    if not isinstance(val, (int, float)):
+        return 0.0
+    return float(val)
 
 
 def evaluate_segment(
@@ -62,16 +69,17 @@ def evaluate_segment(
         else:
             G = max(G, w)
 
-    formulas = rules.get("formulas", {})
-    if formulas.get("structural") == "F_times_K_E_T":
-        ri = F * K * E * T
-    else:
-        ri = F * K * E * T
+    comp = rules.get("computation") or {}
+    ri_coef = float(comp.get("ri", {}).get("coefficient", 1.0))
+    mi_coef = float(comp.get("mi", {}).get("coefficient", 1.0))
 
-    if formulas.get("functional") == "G_times_K_T":
-        mi = G * K * T
+    func_formula = rules.get("formulas", {}).get("functional", "G_times_K_E")
+    # DB31/CJJ：RI 含 T；MI 不含 T（8.4.4 式中仅有 K、E）
+    ri = ri_coef * F * K * E * T
+    if func_formula == "G_times_K_T":
+        mi = mi_coef * G * K * T
     else:
-        mi = G * K * T
+        mi = mi_coef * G * K * E
 
     gt = rules.get("grade_thresholds", {})
     t1 = float(gt.get("level_1_max", 4))

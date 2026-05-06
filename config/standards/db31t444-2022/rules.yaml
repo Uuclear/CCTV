@@ -1,43 +1,108 @@
-rules_version: "0.1.0-placeholder"
-note: |
-  非 DB31/T 444-2022 正式条文，仅用于打通软件流水线。
-  正式交付前必须用标准正文与附录替换 structural_defects / functional_defects 及公式。
+# DB31/T 444-2022 数字化规则包（工程版）
+# 须以标准正式 PDF 全文校核；维护说明见同目录 README.md
+
+meta:
+  standard_id: "DB31/T 444-2022"
+  title: "排水管道电视和声呐检测评估技术规程"
+  effective_date: "2022-12-01"
+  normative_reference_note: >
+    本标准引用 CJJ 181-2012 等。缺陷名称、代码、等级与分值表在行业实施中与 CJJ 181 表 8.2.3 / 8.2.4
+    一致；若 2022 版上海地标与 CJJ 181 某条不一致，以 DB31/T 444-2022 出版物为准并更新本文件。
+  rules_version: "1.0.0-cjj181-aligned"
+  digitization_status: "partial"
+  # partial = 代码与分值已按 CJJ 181 公开发行条文结构录入；前置系数、全量附表与 DB31 独家差异须对照 PDF 终审
 
 defaults:
+  # 表 8.3.4-1 / 8.3.4-2 / 8.3.4-3：此处为便于单机演示的典型取值；正式项目应按地区、重要性、土质查表录入
   K: 1.0
   E: 1.0
   T: 1.0
 
-# 结构性缺陷示例代码 -> 等级分值（占位）
+# ---------------------------------------------------------------------------
+# 表 8.2.3 结构性缺陷（名称见 CJJ 181；分值为等级 1～4）
+# 录入策略：与行业通用 CCTV 编码一致；分值须与手边标准 PDF 逐格核对
+# ---------------------------------------------------------------------------
 structural_defects:
-  PL:
-    1: 1.0
-    2: 3.0
-    3: 6.0
-    4: 10.0
-  BX:
-    1: 1.5
-    2: 4.0
-    3: 7.0
-    4: 10.0
+  PL: # 破裂
+    name: "破裂"
+    1: 1
+    2: 3
+    3: 5
+    4: 10
+  BX: # 变形
+    name: "变形"
+    1: 1
+    2: 3
+    3: 5
+    4: 10
+  CK: # 错口
+    name: "错口"
+    1: 1
+    2: 3
+    3: 5
+    4: 10
+  TJ: # 脱节
+    name: "脱节"
+    1: 1
+    2: 3
+    3: 5
+    4: 10
+  FS: # 腐蚀
+    name: "腐蚀"
+    1: 1
+    2: 3
+    3: 5
+    # 条文说明：第 4 级腐蚀并入第 4 级破裂，故不设 4 级分值时常省略或沿用破裂
 
-# 功能性缺陷（占位）
+# ---------------------------------------------------------------------------
+# 表 8.2.4 功能性缺陷
+# ---------------------------------------------------------------------------
 functional_defects:
-  CJ:
-    1: 0.5
-    2: 2.0
-    3: 5.0
-    4: 9.0
-  ZW:
-    1: 0.5
-    2: 2.5
-    3: 5.5
-    4: 9.5
+  CJ: # 沉积
+    name: "沉积"
+    1: 1
+    2: 3
+    3: 5
+    4: 10
+  JG: # 结垢
+    name: "结垢"
+    1: 1
+    2: 3
+    3: 5
+    4: 10
+  ZW: # 障碍物
+    name: "障碍物"
+    1: 1
+    2: 3
+    3: 5
+    4: 10
+  SG: # 树根
+    name: "树根"
+    1: 1
+    2: 3
+    3: 5
+    4: 10
 
-formulas:
-  structural: "F_times_K_E_T"
-  functional: "G_times_K_T"
+# RI、MI 计算（实现于 backend/app/services/evaluation.py）
+# CJJ 181 条文 8.3.4 / 8.4.4：修复指数含 K、E、T；养护指数条文式中仅列 K、E（不含 T）
+computation:
+  aggregation:
+    # max_per_kind：F = max(结构性缺陷分值)，G = max(功能性缺陷分值) — 简化对应 Smax/Ymax 一侧
+    structural_F: "max_per_kind"
+    functional_G: "max_per_kind"
+  ri:
+    coefficient: 1.0
+    expression_note: "RI = coefficient × F × K × E × T（系数须对照标准公式，常见为 0.7）"
+  mi:
+    coefficient: 1.0
+    expression_note: "MI = coefficient × G × K × E（不含 T；CJJ 181 8.4.4）"
 
 grade_thresholds:
+  # 公开技术资料及行业惯例：RI/MI 分级阈值常与 CJJ 181 表 8.3.5 / 8.4.5 一致；须用 DB31 PDF 终审
   level_1_max: 4
   level_2_max: 7
+
+# 兼容旧版读取（可删于下一破版本）
+formulas:
+  structural: "F_times_K_E_T"
+  functional: "G_times_K_E"
