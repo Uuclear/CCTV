@@ -57,7 +57,7 @@
       "浏览器打开首页，列表加载无控制台跨域错误",
       "通过表单新建项目后列表刷新出现新项"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -77,7 +77,7 @@
       "POST 生成报告返回文件路径或二进制",
       "用 Word 打开抽查字段被替换"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -86,7 +86,7 @@
       "从同一 docx 生成 pdf",
       "校验文件非空且可打开"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

@@ -1,13 +1,14 @@
 # Shift log — CCTV-report
 
+## 2026-05-06（卡住修复 & E2E）
+
+- **卡住原因**：`npm install` 默认触发 Playwright 浏览器下载，弱网下极慢或超时。
+  - 处理：`init.ps1` / `init.sh` 设置 `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`；首次 E2E 用 [`scripts/e2e.ps1`](scripts/e2e.ps1) 单独 `playwright install chromium`（可重试）。
+- **依赖**：[`backend/requirements.txt`](backend/requirements.txt) 已列入 `python-docx`、`docxtpl`、`rapidocr-onnxruntime`，避免新 venv 缺包。
+- **E2E**：[`frontend/playwright.config.ts`](frontend/playwright.config.ts) 自动拉起 uvicorn + `vite dev`；[`frontend/e2e/smoke.spec.ts`](frontend/e2e/smoke.spec.ts) 已跑通。
+- **报告/PDF**：`POST .../reports/docx|pdf`；PDF 无 LibreOffice 时 503；[`desktop/run-dev.ps1`](desktop/run-dev.ps1) 双进程开发。
+- **Tauri**：仍未集成原生 `src-tauri`；`feature_list` 该项保持 `false`，后续需 Rust 工具链再补。
+
 ## 2026-05-06
 
-- 已按 long-running agent harness 落地：`AGENTS.md`、`feature_list.json`、`claude-progress.txt`、`init.ps1` / `init.sh`、`docs/harness.md`。
-- 后端：`FastAPI` + `SQLAlchemy` 异步 SQLite；`Project` / `Segment` / `Defect` CRUD；占位 `rules.yaml` 驱动 RI/MI；`pytest` + `:memory:` 测试。
-- 前端：`Vite` + `React` + `TS`，animal-island 风格自有 CSS token。
-
-## 2026-05-06（续 · 视频抽帧）
-
-- 视频：`POST /api/segments/{id}/video` 上传至 `data/files/uploads/...`；`POST /api/segments/{id}/extract-preview` 调用 ffmpeg/ffprobe 随机时刻抽 PNG，写入 `data/files/previews/...` 并更新 `preview_frame_relpath`；body 可选 `source_absolute`（须在 `repo_root` 或 `files_dir` 下）；`GET /media/...` 静态访问；`path_policy` 防 `..` 穿越。
-- `pytest` 现为 10 条；`feature_list` 中「视频：ffmpeg 抽帧…」已 `passes: true`。
-- 下一步：OCR、docxtpl 报告、PDF、Tauri；DB31 正式附录写入 `config/standards/`。
+- 初始 harness + FastAPI/React 骨架、视频抽帧等见此前提交。

@@ -13,12 +13,13 @@ from app.schemas import (
     DefectCreate,
     DefectRead,
     ExtractPreviewBody,
+    OcrPreviewOut,
     SegmentCreate,
     SegmentRead,
     SegmentReadWithSample,
     SegmentUpdate,
 )
-from app.services import video_frames
+from app.services import ocr_text, pipe_regex, video_frames
 from app.services.evaluation import evaluate_segment, load_rules
 from app.services.path_policy import resolve_absolute_allowed, resolve_under_dir
 
@@ -161,6 +162,30 @@ async def extract_segment_preview(
     await db.refresh(seg)
     row = SegmentRead.model_validate(seg)
     return SegmentReadWithSample(**row.model_dump(), sample_time_sec=t)
+
+
+@router.post("/api/segments/{segment_id}/ocr-preview", response_model=OcrPreviewOut)
+async def ocr_segment_preview(
+    segment_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> OcrPreviewOut:
+    seg = await db.get(Segment, segment_id)
+    if not seg:
+        raise HTTPException(status_code=404, detail="segment not found")
+    if not seg.preview_frame_relpath:
+        raise HTTPException(status_code=400, detail="no preview_frame_relpath; extract a preview first")
+    img = resolve_under_dir(settings.files_dir, seg.preview_frame_relpath)
+    if not img.is_file():
+        raise HTTPException(status_code=400, detail="preview image missing on disk")
+    raw = ocr_text.image_to_text(img)
+    a, b = pipe_regex.suggest_pipe_range(raw)
+    engine = "rapidocr_onnxruntime" if raw else "none"
+    return OcrPreviewOut(
+        raw_text=raw,
+        suggested_chain_start=a,
+        suggested_chain_end=b,
+        engine=engine,
+    )
 
 
 @router.post("/api/segments/{segment_id}/defects", response_model=DefectRead)

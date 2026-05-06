@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.db import engine
 from app.models import Base
-from app.routers import projects, segments
+from app.routers import projects, reports, segments
 
 
 _BACK_ROOT = Path(__file__).resolve().parent.parent
@@ -37,6 +37,7 @@ app.add_middleware(
 
 app.include_router(projects.router)
 app.include_router(segments.router)
+app.include_router(reports.router)
 
 app.mount(
     "/media",

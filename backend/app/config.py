@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     repo_root: Path = _REPO_ROOT
     files_dir: Path = _REPO_ROOT / "data" / "files"
     standards_dir: Path = _REPO_ROOT / "config" / "standards" / "db31t444-2022"
+    report_template_docx: Path = _REPO_ROOT / "templates" / "report" / "jinja_minimal.docx"
     cors_origins: str = "http://127.0.0.1:5173,http://localhost:5173"
 
 

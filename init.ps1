@@ -10,10 +10,12 @@ if (-not (Test-Path "$root/backend/.venv")) {
 & "$root/backend/.venv/Scripts/python.exe" -m pip install --upgrade pip
 & "$root/backend/.venv/Scripts/pip.exe" install -r "$root/backend/requirements.txt"
 
-Write-Host "== Installing frontend deps =="
+Write-Host "== Installing frontend deps (Playwright browsers skipped; run scripts/e2e.ps1 for E2E) =="
 Push-Location "$root/frontend"
 if (-not (Test-Path "package.json")) { throw "frontend/package.json missing" }
+$env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
 npm install
+Remove-Item Env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD -ErrorAction SilentlyContinue
 Pop-Location
 
 Write-Host ""

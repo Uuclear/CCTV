@@ -50,13 +50,16 @@ export default function App() {
             <label className="field">
               <span>工程名称</span>
               <input
+                data-testid="project-name-input"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
                 minLength={1}
               />
             </label>
-            <button className="btn primary" type="submit" disabled={busy}>
+            <button
+              data-testid="create-project-submit"
+              className="btn primary" type="submit" disabled={busy}>
               {busy ? "保存中…" : "创建"}
             </button>
           </form>

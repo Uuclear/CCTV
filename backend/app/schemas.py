@@ -98,3 +98,10 @@ class ExtractPreviewBody(BaseModel):
 
 class SegmentReadWithSample(SegmentRead):
     sample_time_sec: Optional[float] = None
+
+
+class OcrPreviewOut(BaseModel):
+    raw_text: str
+    suggested_chain_start: Optional[str] = None
+    suggested_chain_end: Optional[str] = None
+    engine: str = "none"
