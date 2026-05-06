@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { createProject, fetchProjects, type Project } from "./api";
+import { ProjectWorkbench } from "./ProjectWorkbench";
 
 export default function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [name, setName] = useState("新检测工程");
   const [busy, setBusy] = useState(false);
+  const [workbenchId, setWorkbenchId] = useState<number | null>(null);
 
   async function load() {
     setErr(null);
@@ -35,18 +37,30 @@ export default function App() {
     }
   }
 
+  if (workbenchId != null) {
+    return (
+      <ProjectWorkbench
+        projectId={workbenchId}
+        onBack={() => {
+          setWorkbenchId(null);
+          void load();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="shell">
       <header className="topbar">
         <div className="topbar-inner">
           <h1 className="title">CCTV 检测报告工作台</h1>
-          <span className="pill">DB31/T 444-2022 · 规则占位</span>
+          <span className="pill">DB31/T 444-2022 · 规则工程版</span>
         </div>
       </header>
       <main className="main">
         <section className="card">
           <h2 className="card-title">新建项目</h2>
-          <form className="row" onSubmit={onCreate}>
+          <form className="row" onSubmit={(e) => void onCreate(e)}>
             <label className="field">
               <span>工程名称</span>
               <input
@@ -59,7 +73,10 @@ export default function App() {
             </label>
             <button
               data-testid="create-project-submit"
-              className="btn primary" type="submit" disabled={busy}>
+              className="btn primary"
+              type="submit"
+              disabled={busy}
+            >
               {busy ? "保存中…" : "创建"}
             </button>
           </form>
@@ -72,12 +89,22 @@ export default function App() {
           ) : (
             <ul className="list">
               {projects.map((p) => (
-                <li key={p.id} className="list-item">
-                  <div className="list-main">{p.name}</div>
-                  <div className="list-meta">
-                    #{p.id}
-                    {p.project_code ? ` · ${p.project_code}` : ""}
+                <li key={p.id} className="list-item list-item-row">
+                  <div>
+                    <div className="list-main">{p.name}</div>
+                    <div className="list-meta">
+                      #{p.id}
+                      {p.project_code ? ` · ${p.project_code}` : ""}
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    className="btn secondary"
+                    data-testid={`open-project-${p.id}`}
+                    onClick={() => setWorkbenchId(p.id)}
+                  >
+                    进入工作台
+                  </button>
                 </li>
               ))}
             </ul>
