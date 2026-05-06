@@ -1,0 +1,43 @@
+rules_version: "0.1.0-placeholder"
+note: |
+  非 DB31/T 444-2022 正式条文，仅用于打通软件流水线。
+  正式交付前必须用标准正文与附录替换 structural_defects / functional_defects 及公式。
+
+defaults:
+  K: 1.0
+  E: 1.0
+  T: 1.0
+
+# 结构性缺陷示例代码 -> 等级分值（占位）
+structural_defects:
+  PL:
+    1: 1.0
+    2: 3.0
+    3: 6.0
+    4: 10.0
+  BX:
+    1: 1.5
+    2: 4.0
+    3: 7.0
+    4: 10.0
+
+# 功能性缺陷（占位）
+functional_defects:
+  CJ:
+    1: 0.5
+    2: 2.0
+    3: 5.0
+    4: 9.0
+  ZW:
+    1: 0.5
+    2: 2.5
+    3: 5.5
+    4: 9.5
+
+formulas:
+  structural: "F_times_K_E_T"
+  functional: "G_times_K_T"
+
+grade_thresholds:
+  level_1_max: 4
+  level_2_max: 7

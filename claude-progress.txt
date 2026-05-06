@@ -1,0 +1,8 @@
+# Shift log — CCTV-report
+
+## 2026-05-06
+
+- 已按 long-running agent harness 落地：`AGENTS.md`、`feature_list.json`（前 6 项 `passes: true`）、`claude-progress.txt`、`init.ps1` / `init.sh`、`docs/harness.md`。
+- 后端：`FastAPI` + `SQLAlchemy` 异步 SQLite（可 `DATABASE_URL` 切 Postgres）、`Project` / `Segment` / `Defect` CRUD、占位 `rules.yaml` 驱动 RI/MI 重算；`pytest` 6 条（含 `:memory:` + `StaticPool` + conftest 建表）。
+- 前端：`Vite` + `React` + `TS`，animal-island 风格自有 CSS token，`npm run build` 通过；**尚未**做真实浏览器 E2E，`feature_list` 前端项仍为 `false`。
+- 下一步：ffmpeg 抽帧、OCR、`templates/report` docxtpl、Tauri；将 DB31 正式附录写入 `config/standards/`。

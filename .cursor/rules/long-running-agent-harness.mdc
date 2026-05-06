@@ -1,0 +1,222 @@
+---
+description: Harness engineering + mandatory repo conventions — Canvas (visual companion) for analytical deliverables, Chinese user replies, long-running agent continuity, progressive docs (Anthropic + OpenAI).
+alwaysApply: true
+---
+
+# Long-Running Agent Harness (Cursor)
+
+This rule distills **[*Effective harnesses for long-running agents*](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)** (Anthropic, 2025-11-26) and **[*Harness engineering: leveraging Codex in an agent-first world*](https://openai.com/index/harness-engineering/)** (OpenAI, 2026-02-11) into **enforceable Cursor behavior**.
+
+---
+
+## Mandatory workspace conventions (this repository)
+
+These override generic defaults whenever applicable.
+
+### Prefer the visual companion (Cursor Canvas)
+
+When the deliverable is a **standalone analytical or data-heavy artifact**—metrics breakdowns, investigations, audits, architecture reviews with categorized findings, multi-row tables users need to inspect, timelines, charts, MCP-sourced dashboards where **the structured data itself is the output**—**prefer opening a Cursor Canvas** (visual companion / `.canvas.tsx`) beside chat instead of pasting giant markdown tables or wall-of-text blocks into the reply.
+
+- If you are about to emit a large markdown table primarily for consumption as a visual report, **use a canvas** unless the user asked for a different surface (e.g. “put this only in Slack,” “embed in existing file”).
+- Follow the **Canvas** workflow: eligibility → single file under workspace `canvases/*.canvas.tsx` → imports only `cursor/canvas` → embed data inline—see Cursor Canvas skill/policy when creating or editing canvases.
+
+Do **not** use a canvas for quick fixes, narrow debugging, PR-only edits, or when the canvas would duplicate a user-specified target system.
+
+### User-facing language
+
+Unless the user **explicitly** asks for another language, write **all natural-language assistant replies in chat in Chinese (简体中文)**. Technical identifiers, file paths, code, cited URLs, and quoted error messages remain as-is.
+
+---
+
+## Problem framing you must internalize
+
+**Anthropic — “shift work with amnesia”**  
+Agents run in discrete sessions; a new session has **no implicit memory** of the last one—like engineers on rotating shifts where each newcomer forgets the previous shift. Compact **Compaction** alone does **not** guarantee coherent handoffs: the successor may inherit half-written features, muddy intent, or a broken baseline **even with compaction**, because summarized state is not always a perfect briefing.
+
+Canonical failure clusters from the article (and reproduced in its summary table illustration):
+
+| Failure | What it looks like |
+| --- | --- |
+| **Premature whole-project victory** | Repository “looks substantial,” agent stops. |
+| **One-shot overload** | Tries to build too much before context exhaustion; leaves undocumented half-implemented work. |
+| **Dirty / unexplained workspace** | Next session wastes tokens rediscovering how to run, test, and stabilize. |
+| **False “feature done”** | Unit tests/`curl`-level checks exist, **end-to-end user journey still broken.** |
+
+The **diagram / figure** accompanying **browser testing** is not ornamental: Puppeteer MCP **screenshots of the running UI** materially improved bug discovery—**interaction-level evidence**, not reading React files. That implies: **simulate a user** along scripted paths; screenshots/snapshots are first-class correctness signals **when the product has a GUI**.
+
+Anthropic explicitly notes automation limits: **browser-native alert dialogs** could not be reliably observed through their Puppeteer MCP path; UX that depended on alerts stayed buggier. **Design UX and assertions** so critical acceptance does not hinge on modalities the harness cannot perceive.
+
+---
+
+**OpenAI — “thin environment ⇒ slow agent,” not weak model**
+
+When humans no longer author code line-by-line, progress depends on:
+
+- Whether goals decompose into **legible blocks** (**depth-first** capability building).
+- Whether missing capability is repaired by making it **enforceable**, not “prompt harder.”  
+  Meta-question after any stall: **“What is missing—and how do we encode it so the agent can see, verify, and comply?”**
+
+**Humans steer. Agents execute** is the headline operating model: humans set intent, prioritization, and judgment calls; agents run the loops (implement, validate, revise, integrate).
+
+---
+
+## Anthropic harness: initializer vs coding (“two prompts, one harness”)
+
+Footnote-equivalent clarification: Anthropic treats these as distinct “agents” **only because the first user prompt differs** from subsequent ones—same system prompt, toolset, harness otherwise. In practice: **a workflow branch**, not forked infra.
+
+### Initial session (initializer prompt) seeds durable artifacts
+
+- **`init.sh` (or equivalent one-command dev bootstrap)** — collapses repeated “how do I run this?” discovery (table row **“figures out how to run the app”**).
+- **`claude-progress.txt` (name can be standardized per repo)** — human-style shift log: what landed, regressions suspected, suggested next bite.
+- **Structured feature/requirements file**, typically **`feature_list.json`**  
+  Expanded from user spec until the surface area is explicit (Anthropic cites **200+** fine-grained features for a clone example). Each starts **`passes: false`** unless you consciously seed already-true baseline items.
+  - Prefer **JSON over Markdown lists** here: empirical finding that JSON is harder to casually overwrite wholesale; still reinforce in natural language **“never delete or rewrite `steps`; only toggle pass state.”**
+  - Canonical record shape aligns with Anthropic snippet: `category`, `description`, `steps` (executable E2E script for a human/agent), **`passes`**.
+
+```json
+{
+  "category": "functional",
+  "description": "New chat button creates a fresh conversation",
+  "steps": [
+    "Navigate to main interface",
+    "Click the 'New Chat' button",
+    "Verify a new conversation is created",
+    "Check that chat area shows welcome state",
+    "Verify conversation appears in sidebar"
+  ],
+  "passes": false
+}
+```
+
+- **Git repository + initial descriptive commit(s)** exhibiting base tree.
+
+### Every later session (coding prompt rhythm)
+
+Anthropic publishes a canonical **cold-start trace** (“typical assistant messages”). You should emulate that skeleton in Cursor tooling order:
+
+1. **Workspace bearings** (`pwd` / confirm roots you may edit).
+2. **Read** `claude-progress.txt` (+ any exec-plan pointer your repo uses).
+3. **Read** `feature_list.json` (or your equivalent).
+4. **`git log` (recent, oneline-ish)** — who changed what, narrative of reality.
+5. **Read/run `init.sh` (or doc equivalent)** → **start servers/services**.
+6. **Smoke the core user journey BEFORE new feature work** (for the anthropic-demo this was: Puppeteer MCP to start chat, send message, receive reply).  
+   If smoke fails → **repair baseline first** or you compound partial-state damage.
+
+Then:
+
+- Pick **exactly ONE** highest-priority item with **`passes: false`**.
+- Implement with **incremental commits** where helpful; descriptive messages.
+- **Only after careful testing** toggle **`passes` true** — no other edits to requirements/steps semantics.
+- Append **structured progress summary** before ending.
+
+**Clean handoff definition** (~Anthropic verbatim intent): Quality you would **merge**: no glaring regressions for scope touched, orderly code, documented where non-obvious—another engineer (or tomorrow’s agent) can start fresh work without archaeology.
+
+---
+
+## OpenAI harness: knowledge layout figure → progressive disclosure
+
+The **in-repo knowledge-store layout illustration** conveys three engineering commitments:
+
+1. **`AGENTS.md` is a TOC, never an encyclopedia** (~**100-ish lines**) — curated pointers, no dumping every policy sentence at root depth.
+2. **`docs/` is the structured system-of-record**, split by concern (**design-docs**, **exec-plans/active|completed**, **product-specs**, **references/** with `*-llms.txt`-style excerpts, optional **generated/** artifacts such as **`db-schema.md`**, thematic top-level stubs like **`DESIGN.md`**, **`FRONTEND.md`**, **`SECURITY.md`**, **`QUALITY_SCORE.md`**, **`RELIABILITY.md`**, **`PLANS.md`**, **`PRODUCT_SENSE.md`**, etc.—trim to what this product needs).
+3. **Progressive disclosure**: default context stays small → follow **one spine** deeper per investigation, avoiding “whole tree ingestion” paralysis.
+
+Anthropic-aligned **plans** coexist here: heavyweight work → **checked-in execution plans** with decision/progress trails (OpenAI cookbook *codex exec plans* pattern); ephemeral notes for scraps.
+
+### Why mega-`AGENTS.md` systematically fails
+
+OpenAI names predictable pathologies (**paraphrased**):
+
+| Pathology | Consequence |
+| --- | --- |
+| Context is scarce | Huge manual crowds out task + code cues → missed constraints |
+| Everything “important” | Nothing is navigably important → naive local pattern mimicry |
+| Monolith rots silently | Humans stop maintaining truth; file becomes misleading (“attractive nuisance”) |
+| Hard to mechanically verify single blob | No structural CI/lint ⇒ drift is inexorable |
+
+**Mechanical hygiene**: Dedicated linters/CI validating cross-links and structure; recurring **doc-gardening agent**/`task` sweeping stale narratives into fix PRs.
+
+---
+
+## Architecture figure (layers + Providers): enforce direction, not micro-style
+
+OpenAI depicts **within each domain** permissible dependency flow:
+
+**Types → Config → Repo → Service → Runtime → UI** (**forward-only**).
+
+Cross-cutting (auth, connectors, telemetry, feature flags…) enters through a **Providers** façade—no ad-hoc wiring shortcuts.
+
+Operational translation:
+
+- **Parse / validate shapes at boundaries** Lexi Lambda (“parse don’t validate”); inner layers may trust richer types—the article notes models often converge on tooling like **Zod** without mandating any specific library).
+- **`custom linters`, `structural tests`, small “taste invariants”**: structured logging uniformity, naming, file-size caps, platform reliability notes—lint message bodies should embed **copy-pasteable remediation**.
+- Goal: agents ship fast **without** accumulating architectural debt—rigidity enables velocity.
+
+Diagram-intent reminder: resemble **central platform org leadership** → hard boundaries; maximum freedom **inside**.
+
+---
+
+## Application legibility = extending the harness surface
+
+Anthropic anchors E2E with **browser automation + screenshots.**
+
+OpenAI extends “legibility” infra:
+
+| Surface | Harness affordance |
+| --- | --- |
+| UI | Boot app **per git worktree** where feasible; expose **Chrome DevTools-style** primitives (DOM snapshot, screenshots, navigated flows)—**reproduce, validate UX fixes, argue about UX like a debugger** |
+| Observability stacks | Logs/metrics/traces scoped to ephemeral worktrees; **`LogQL` / `PromQL` class queries** to ground goals like **`startup <800ms`** or **span budgets on named critical journeys** |
+| Humans | Humans still prioritize and validate outcomes—but **automate away copy/paste CLI context** |
+
+Long Codex sessions **6+ hours** were cited contingent on ambient observability scaffolding.
+
+---
+
+## Review / iteration loop semantics (“Ralph” shape)
+
+Codex pipelines push PRs toward merge through iterative **agent↔agent** review: agent **self-review locally**, solicit **explicit additional reviewers** (another agent profile/tooling), ingest comments, rerun checks—**iterate until reviewer agents clear** (**Ralph Wiggum loop** analogy in source). Humans may be optional reviewers but judgments still exist upstream in prompts and infra.
+
+Agents should use **`gh`, repo-local scripts**, and **skills** wired into the harness to ingest evidence—avoid manual paste theater.
+
+---
+
+## Throughput ⇒ merge-policy caveat
+
+OpenAI: when agent throughput **dominates scarce human attention**, **short-lived PRs**, pragmatic handling of flaky tests via **retry + quick follow-ups** may beat indefinite gate blocking—**irresponsible** under low throughput/weak nets. Adapt to your blast radius controls.
+
+---
+
+## Entropy (“garbage collection” for drift)
+
+Agents **replicate prevailing patterns—even bad ones.**
+
+Mitigations called out:
+
+- **`golden principles`**: terse, mechanically checkable doctrines (prefer shared invariant packages vs scattershot helpers; don’t **`YOLO` probe unknown JSON blobs—parse at boundaries** or typed SDKs).
+- **Background cleanup cadence**: small refactoring PR scans; update **quality-score style** gap tracking—the article frames this as continual **loan repayment**.
+
+---
+
+## Open questions you should remain honest about (Anthropic)
+
+Multi-agent decomposition (explicit testing/QA/refactor personas) vs one general coder **still empirically open**. Web-demo harness may partially generalize to research/finance/other long-horizons—**adapt artifacts**, retain **incremental externally visible state.**
+
+---
+
+## Concrete Cursor obedience checklist
+
+Every **new Cursor session**:
+
+1. Establish directory boundaries (`pwd`/workspace roots).
+2. Read **progress log**, **feature JSON**, **`git log`**, **`init`/README run path**.
+3. **Boot stack** and **human-like smoke/E2E** on core flows **before feature work**.
+4. Select **exactly one** unchecked feature; defer scope creep unless human reprioritizes.
+5. End with **meaningful commits**, **truthful passes flags only after rigorous testing**, refreshed **progress log**.
+6. **Presentation:** when the reply is a standalone analytical / data-heavy artifact, **prefer Cursor Canvas** (visual companion) over huge markdown tables—see “Mandatory workspace conventions” above.
+7. **Language:** **user-facing chat in Chinese (简体中文)** unless the user explicitly asks for another language.
+
+Cross-cutting reminders:
+
+- **Chat-only decisions undocumented in repo ⇒ they do not exist** for successor agents.
+
+- Prefer **Agents entry map** pointers over duplicating encyclopedic lore in-chat.

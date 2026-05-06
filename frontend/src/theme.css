@@ -1,0 +1,176 @@
+/* Animal-island-inspired tokens (original CSS only; no third-party UI pack). */
+:root {
+  --ai-green-deep: #2d6a4f;
+  --ai-green-mid: #40916c;
+  --ai-green-soft: #95d5b2;
+  --ai-cream: #fefae0;
+  --ai-sand: #dda15e;
+  --ai-brown: #bc6c25;
+  --ai-sky: #74c69d;
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --shadow: 0 8px 24px rgba(45, 106, 79, 0.12);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: linear-gradient(165deg, var(--ai-cream), #e9f5ef 42%, #d8f3dc);
+  color: #1b4332;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+.shell {
+  min-height: 100vh;
+  padding-bottom: 48px;
+}
+
+.topbar {
+  background: linear-gradient(90deg, var(--ai-green-deep), var(--ai-green-mid));
+  color: var(--ai-cream);
+  padding: 20px 0;
+  box-shadow: var(--shadow);
+}
+
+.topbar-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.45rem;
+  letter-spacing: 0.02em;
+}
+
+.pill {
+  background: rgba(254, 250, 224, 0.22);
+  border: 1px solid rgba(254, 250, 224, 0.4);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+}
+
+.main {
+  max-width: 960px;
+  margin: 28px auto;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(64, 145, 108, 0.12);
+  clip-path: inset(0 round var(--radius-lg));
+}
+
+.card-title {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  color: var(--ai-green-deep);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.field input {
+  min-width: 240px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 2px solid rgba(45, 106, 79, 0.18);
+  background: #fff;
+  font: inherit;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--ai-green-mid);
+  box-shadow: 0 0 0 3px rgba(116, 198, 157, 0.35);
+}
+
+.btn {
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 10px 18px;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.12s ease;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn.primary {
+  background: linear-gradient(180deg, var(--ai-sky), var(--ai-green-mid));
+  color: #fff;
+  box-shadow: 0 4px 0 var(--ai-brown);
+}
+
+.btn.primary:not(:disabled):active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--ai-brown);
+}
+
+.muted {
+  color: rgba(27, 67, 50, 0.6);
+}
+
+.error {
+  color: #9d0208;
+  margin: 12px 0 0;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.list-item {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(216, 243, 220, 0.45);
+  border: 1px solid rgba(64, 145, 108, 0.18);
+}
+
+.list-main {
+  font-weight: 600;
+}
+
+.list-meta {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin-top: 4px;
+}
