@@ -44,7 +44,7 @@ API 文档：<http://127.0.0.1:8000/docs>
 - **ffmpeg / ffprobe**：须安装并在 `PATH` 中，用于 `POST /api/segments/{id}/extract-preview` 真机抽帧（单元测试已 mock，可不装也能跑 `pytest`）。
 - 静态访问预览图：`GET /media/<相对于 data/files 的路径>`（与 `preview_frame_relpath` 拼接，例如 `/media/previews/1/2/xxx.png`）。
 - **LibreOffice**：生成 PDF（`POST /api/projects/{id}/reports/pdf`）需在系统可执行路径中找到 `soffice`；未安装时接口返回 **503**（单元测试使用 mock）。
-- **端到端**：`init.ps1` / `init.sh` 已设置 `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`，避免 `npm install` 长时间拉浏览器。首次跑 E2E 请执行根目录 [`scripts/e2e.ps1`](scripts/e2e.ps1)（或 `cd frontend && npx playwright install chromium && npm run test:e2e`）。弱网可能需重试 `playwright install`。
+- **Linux / WSL 上 Tauri**：编译 Rust 侧常需系统里的 **OpenSSL 头文件**（`libssl-dev`）、**pkg-config** 及 WebKit/GTK 等；若报 `could not find openssl development headers`，按 [`docs/TAURI.md`](docs/TAURI.md) 安装依赖后再 `npm run tauri:dev`。
 
 ## 桌面
 
