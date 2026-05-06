@@ -7,7 +7,7 @@
 - **依赖**：[`backend/requirements.txt`](backend/requirements.txt) 已列入 `python-docx`、`docxtpl`、`rapidocr-onnxruntime`，避免新 venv 缺包。
 - **E2E**：[`frontend/playwright.config.ts`](frontend/playwright.config.ts) 自动拉起 uvicorn + `vite dev`；[`frontend/e2e/smoke.spec.ts`](frontend/e2e/smoke.spec.ts) 已跑通。
 - **报告/PDF**：`POST .../reports/docx|pdf`；PDF 无 LibreOffice 时 503；[`desktop/run-dev.ps1`](desktop/run-dev.ps1) 双进程开发。
-- **Tauri**：仍未集成原生 `src-tauri`；`feature_list` 该项保持 `false`，后续需 Rust 工具链再补。
+- **Tauri**：已在 `frontend/src-tauri` 集成 Tauri 2；`npm run tauri:dev` 经 `scripts/tauri-dev-bootstrap.mjs` 拉起后端+Vite；图标由 `npx tauri icon` 自 1024 PNG 生成。`feature_list` 中该项已 `true`。
 
 ## 2026-05-06
 

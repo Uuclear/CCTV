@@ -1,5 +1,6 @@
-# Tauri 桌面壳（规划）
+# Tauri 桌面壳
 
-当前用 **[`desktop/run-dev.ps1`](../desktop/run-dev.ps1)** 在 Windows 上同时启动后端与 Vite，并用 Playwright 做 UI 冒烟。
-
-若需 **原生 Tauri 窗口**，建议在 `frontend/` 下初始化 `src-tauri`（需安装 [Rust](https://rustup.rs/)），`beforeDevCommand` 指向 `npm run dev`，正式包内再考虑嵌入或 sidecar 启动 Python 后端。
+- **开发**：在 [`frontend/`](../frontend/) 下执行 `npm run tauri:dev`（需 [Rust](https://rustup.rs/)）。会先由 [`scripts/tauri-dev-bootstrap.mjs`](../scripts/tauri-dev-bootstrap.mjs) 在必要时拉起 `uvicorn`，再阻塞运行 `vite`，供 WebView 加载 `http://127.0.0.1:5173`。
+- **仍可用**：[`desktop/run-dev.ps1`](../desktop/run-dev.ps1) 作为仅双进程浏览器方案。
+- **正式包**：当前未把 Python 打进安装包；发布需另做 **sidecar / 安装指引** 或内嵌后端。
+- **图标**：若需重生成，在仓库根已装好后端 venv 的前提下可执行：`pip install pillow`（一次性），在 `frontend/` 放 `icon-1024.png`，再 `npx tauri icon icon-1024.png`。

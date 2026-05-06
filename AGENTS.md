@@ -16,8 +16,13 @@
 | [`backend/`](backend/) | FastAPI、SQLite/PostgreSQL、视频/OCR/报告逻辑 |
 | [`frontend/`](frontend/) | React + Vite + TypeScript，视觉参考 animal-island-ui（自有 token，不默认装该 npm 包） |
 | [`config/standards/db31t444-2022/`](config/standards/db31t444-2022/) | 标准规则包（版本化）；**占位规则非验收依据** |
-| [`templates/`](templates/) | 委托单字段说明、报告 docx 母版（从根目录范本复制） |
+| [`templates/`](templates/) | 委托单字段说明、报告模板（`jinja_minimal.docx` 用于自动生成；`CC01-2-base.docx` 为范本副本） |
 | [`desktop/run-dev.ps1`](desktop/run-dev.ps1) | Windows：同时启动后端与 Vite（非 Tauri） |
+| [`frontend/src-tauri/`](frontend/src-tauri/) | Tauri 2 壳；`cd frontend && npm run tauri:dev` |
+| [`scripts/tauri-dev-bootstrap.mjs`](scripts/tauri-dev-bootstrap.mjs) | Tauri dev：保证 API 就绪后启动 Vite（跨平台） |
+| [`scripts/e2e.ps1`](scripts/e2e.ps1) | 安装 Chromium 并运行 Playwright |
+| [`docs/harness.md`](docs/harness.md) | harness 约定摘要 |
+| [`docs/TAURI.md`](docs/TAURI.md) | Tauri 开发与打包说明 |
 
 ## 运行（开发）
 
@@ -41,9 +46,10 @@ API 文档：<http://127.0.0.1:8000/docs>
 - **LibreOffice**：生成 PDF（`POST /api/projects/{id}/reports/pdf`）需在系统可执行路径中找到 `soffice`；未安装时接口返回 **503**（单元测试使用 mock）。
 - **端到端**：`init.ps1` / `init.sh` 已设置 `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`，避免 `npm install` 长时间拉浏览器。首次跑 E2E 请执行根目录 [`scripts/e2e.ps1`](scripts/e2e.ps1)（或 `cd frontend && npx playwright install chromium && npm run test:e2e`）。弱网可能需重试 `playwright install`。
 
-## 桌面双进程（非 Tauri）
+## 桌面
 
-- Windows：[`desktop/run-dev.ps1`](desktop/run-dev.ps1) 在一台机器上拉起后端与 Vite（需已 `init`）。
+- **Tauri**（原生窗口）：`cd frontend`，`npm run tauri:dev`（见 [`docs/TAURI.md`](docs/TAURI.md)）。
+- **双进程 + 浏览器**：Windows 可用 [`desktop/run-dev.ps1`](desktop/run-dev.ps1)（需已 `init`）。
 
 ## 合规提醒
 
