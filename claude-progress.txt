@@ -8,6 +8,7 @@
 - **E2E**：[`frontend/playwright.config.ts`](frontend/playwright.config.ts) 自动拉起 uvicorn + `vite dev`；[`frontend/e2e/smoke.spec.ts`](frontend/e2e/smoke.spec.ts) 已跑通。
 - **报告/PDF**：`POST .../reports/docx|pdf`；PDF 无 LibreOffice 时 503；[`desktop/run-dev.ps1`](desktop/run-dev.ps1) 双进程开发。
 - **Tauri**：已在 `frontend/src-tauri` 集成 Tauri 2；`npm run tauri:dev` 经 `scripts/tauri-dev-bootstrap.mjs` 拉起后端+Vite；图标由 `npx tauri icon` 自 1024 PNG 生成。`feature_list` 中该项已 `true`。
+- **Linux 常见报错**：`could not find openssl development headers` → 按 [`docs/TAURI.md`](docs/TAURI.md) 安装 `libssl-dev`、`pkg-config` 与 WebKit/GTK 依赖后再编译。若 `npm run tauri:dev` 提示找不到 venv 内 Python，已支持依次尝试 `.venv/bin/python` 与 `.venv/bin/python3`。
 
 ## 2026-05-06
 

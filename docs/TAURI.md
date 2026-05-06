@@ -12,6 +12,11 @@ sudo apt install -y build-essential curl wget file pkg-config libssl-dev \
 
 装好后在 `frontend/` 重试 `npm run tauri:dev`。其他发行版名称不同（如 Fedora 的 `openssl-devel`、`pkgconf-pkg-config`），可按 [Tauri 前置要求](https://v2.tauri.app/start/prerequisites/) 对照安装。
 
+### 其它常见情况
+
+- **提示找不到后端 venv**：在仓库根执行 `./init.sh`（或 Windows 的 `init.ps1`）。`tauri-dev-bootstrap.mjs` 会依次尝试 `backend/.venv/bin/python` 与 `backend/.venv/bin/python3`。
+- **Rust 编译其它报错**：保留从 `npm run tauri:dev` 开始到第一处 `error:` 的**完整日志**便于定位（多为缺系统库或 Rust 版本过旧）。
+
 - **开发**：在 [`frontend/`](../frontend/) 下执行 `npm run tauri:dev`（需 [Rust](https://rustup.rs/)）。会先由 [`scripts/tauri-dev-bootstrap.mjs`](../scripts/tauri-dev-bootstrap.mjs) 在必要时拉起 `uvicorn`，再阻塞运行 `vite`，供 WebView 加载 `http://127.0.0.1:5173`。
 - **仍可用**：[`desktop/run-dev.ps1`](../desktop/run-dev.ps1) 作为仅双进程浏览器方案。
 - **正式包**：当前未把 Python 打进安装包；发布需另做 **sidecar / 安装指引** 或内嵌后端。
