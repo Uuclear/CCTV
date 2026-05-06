@@ -9,6 +9,7 @@ import {
   fetchSegments,
   ocrSegmentPreview,
   patchSegment,
+  patchProject,
   uploadSegmentVideo,
   type Defect,
   type OcrPreviewOut,
@@ -40,6 +41,13 @@ export function ProjectWorkbench({
   const [defectLevel, setDefectLevel] = useState(2);
   const [defectKind, setDefectKind] = useState<"structural" | "functional">("structural");
   const [exportMsg, setExportMsg] = useState<string | null>(null);
+  const [pjName, setPjName] = useState("");
+  const [pjClient, setPjClient] = useState("");
+  const [pjCode, setPjCode] = useState("");
+  const [pjRoad, setPjRoad] = useState("");
+  const [pjScope, setPjScope] = useState("");
+  const [pjContact, setPjContact] = useState("");
+  const [pjPhone, setPjPhone] = useState("");
 
   const selected = segments.find((s) => s.id === selectedId) ?? null;
 
@@ -56,6 +64,17 @@ export function ProjectWorkbench({
   useEffect(() => {
     void reloadAll().catch((e) => setErr(String(e)));
   }, [projectId]);
+
+  useEffect(() => {
+    if (!project) return;
+    setPjName(project.name);
+    setPjClient(project.client_org ?? "");
+    setPjCode(project.project_code ?? "");
+    setPjRoad(project.road_name ?? "");
+    setPjScope(project.scope_text ?? "");
+    setPjContact(project.contact_name ?? "");
+    setPjPhone(project.contact_phone ?? "");
+  }, [project]);
 
   useEffect(() => {
     if (selectedId == null) {
@@ -75,6 +94,27 @@ export function ProjectWorkbench({
       setDraftEnd(s.chain_end_label ?? "");
     }
   }, [selectedId, segments]);
+
+  async function onSaveProject() {
+    setBusy(true);
+    setErr(null);
+    try {
+      await patchProject(projectId, {
+        name: pjName.trim() || undefined,
+        client_org: pjClient.trim() || null,
+        project_code: pjCode.trim() || null,
+        road_name: pjRoad.trim() || null,
+        scope_text: pjScope.trim() || null,
+        contact_name: pjContact.trim() || null,
+        contact_phone: pjPhone.trim() || null,
+      });
+      await reloadAll();
+    } catch (e) {
+      setErr(String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function onAddSegment() {
     setBusy(true);
@@ -201,7 +241,7 @@ export function ProjectWorkbench({
           <button type="button" className="btn ghost" data-testid="workbench-back" onClick={onBack}>
             ← 返回列表
           </button>
-          <h1 className="title" style={{ flex: 1 }}>{project.name}</h1>
+          <h1 className="title" style={{ flex: 1 }}>{pjName || project.name}</h1>
           <span className="pill">工作台</span>
         </div>
       </header>
@@ -210,14 +250,41 @@ export function ProjectWorkbench({
         {exportMsg ? <p className="muted small-note">{exportMsg}</p> : null}
 
         <section className="card">
-          <h2 className="card-title">工程摘要</h2>
-          <div className="meta-grid">
-            <div><span className="lbl">委托单位</span> {project.client_org ?? "—"}</div>
-            <div><span className="lbl">编号</span> {project.project_code ?? "—"}</div>
-            <div><span className="lbl">路名</span> {project.road_name ?? "—"}</div>
-            <div><span className="lbl">联系人</span> {project.contact_name ?? "—"} {project.contact_phone ?? ""}</div>
+          <h2 className="card-title">工程信息</h2>
+          <div className="project-form">
+            <label className="field">
+              <span>工程名称</span>
+              <input value={pjName} onChange={(e) => setPjName(e.target.value)} data-testid="pj-name" required />
+            </label>
+            <label className="field">
+              <span>委托单位</span>
+              <input value={pjClient} onChange={(e) => setPjClient(e.target.value)} data-testid="pj-client" />
+            </label>
+            <label className="field">
+              <span>工程编号</span>
+              <input value={pjCode} onChange={(e) => setPjCode(e.target.value)} data-testid="pj-code" />
+            </label>
+            <label className="field">
+              <span>路名 / 位置</span>
+              <input value={pjRoad} onChange={(e) => setPjRoad(e.target.value)} data-testid="pj-road" />
+            </label>
+            <label className="field full-width">
+              <span>检测范围说明</span>
+              <input value={pjScope} onChange={(e) => setPjScope(e.target.value)} data-testid="pj-scope" />
+            </label>
+            <label className="field">
+              <span>联系人</span>
+              <input value={pjContact} onChange={(e) => setPjContact(e.target.value)} data-testid="pj-contact" />
+            </label>
+            <label className="field">
+              <span>联系电话</span>
+              <input value={pjPhone} onChange={(e) => setPjPhone(e.target.value)} data-testid="pj-phone" />
+            </label>
           </div>
           <div className="toolbar" style={{ marginTop: 14 }}>
+            <button type="button" className="btn secondary" data-testid="save-project" disabled={busy || !pjName.trim()} onClick={() => void onSaveProject()}>
+              保存工程信息
+            </button>
             <button type="button" className="btn secondary" data-testid="export-docx" disabled={busy} onClick={() => void onExportDocx()}>
               导出 Word 报告
             </button>

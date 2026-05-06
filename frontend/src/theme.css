@@ -320,3 +320,14 @@ body {
 .small-note {
   font-size: 0.82rem;
 }
+
+.project-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.project-form .full-width {
+  grid-column: 1 / -1;
+}

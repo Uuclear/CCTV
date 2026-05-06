@@ -25,6 +25,20 @@ def test_project_crud_flow(client: TestClient):
     assert pid in ids
 
 
+def test_project_patch(client: TestClient):
+    r = client.post("/api/projects", json={"name": "patch-me"})
+    pid = r.json()["id"]
+    r2 = client.patch(
+        f"/api/projects/{pid}",
+        json={"client_org": "XX 单位", "road_name": "测试路"},
+    )
+    assert r2.status_code == 200
+    body = r2.json()
+    assert body["client_org"] == "XX 单位"
+    assert body["road_name"] == "测试路"
+    assert body["name"] == "patch-me"
+
+
 def test_segment_list_and_patch(client: TestClient):
     r = client.post("/api/projects", json={"name": "list-test"})
     pid = r.json()["id"]

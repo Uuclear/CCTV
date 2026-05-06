@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db
 from app.models import Project
-from app.schemas import ProjectCreate, ProjectRead
+from app.schemas import ProjectCreate, ProjectRead, ProjectUpdate
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
@@ -25,6 +25,22 @@ async def create_project(body: ProjectCreate, db: AsyncSession = Depends(get_db)
 async def list_projects(db: AsyncSession = Depends(get_db)) -> Sequence[Project]:
     r = await db.execute(select(Project).order_by(Project.id.desc()))
     return r.scalars().all()
+
+
+@router.patch("/{project_id}", response_model=ProjectRead)
+async def patch_project(
+    project_id: int,
+    body: ProjectUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> Project:
+    p = await db.get(Project, project_id)
+    if not p:
+        raise HTTPException(status_code=404, detail="project not found")
+    for k, v in body.model_dump(exclude_unset=True).items():
+        setattr(p, k, v)
+    await db.commit()
+    await db.refresh(p)
+    return p
 
 
 @router.get("/{project_id}", response_model=ProjectRead)

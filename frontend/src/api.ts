@@ -59,6 +59,27 @@ export async function fetchProject(id: number): Promise<Project> {
   return r.json();
 }
 
+export async function patchProject(
+  id: number,
+  body: {
+    name?: string;
+    client_org?: string | null;
+    project_code?: string | null;
+    road_name?: string | null;
+    scope_text?: string | null;
+    contact_name?: string | null;
+    contact_phone?: string | null;
+  },
+): Promise<Project> {
+  const r = await fetch(`/api/projects/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
 export async function createProject(body: {
   name: string;
   client_org?: string | null;

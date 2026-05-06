@@ -29,6 +29,16 @@ class ProjectRead(BaseModel):
     created_at: datetime
 
 
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=256)
+    client_org: Optional[str] = None
+    project_code: Optional[str] = None
+    road_name: Optional[str] = None
+    scope_text: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+
+
 class SegmentCreate(BaseModel):
     original_filename: Optional[str] = None
     display_name: Optional[str] = None
