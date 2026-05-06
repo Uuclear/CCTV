@@ -85,3 +85,16 @@ class DefectRead(BaseModel):
     distance_m: Optional[float]
     note: Optional[str]
     created_at: datetime
+
+
+class ExtractPreviewBody(BaseModel):
+    """Optional overrides for ffmpeg preview."""
+
+    margin_sec: float = Field(1.0, ge=0.0, le=600.0)
+    seed: Optional[int] = None
+    source_absolute: Optional[str] = None
+    """Absolute path on server (must be under repo or files_dir). Dev / LAN convenience."""
+
+
+class SegmentReadWithSample(SegmentRead):
+    sample_time_sec: Optional[float] = None

@@ -34,6 +34,11 @@ npm run dev
 
 API 文档：<http://127.0.0.1:8000/docs>
 
+## 依赖
+
+- **ffmpeg / ffprobe**：须安装并在 `PATH` 中，用于 `POST /api/segments/{id}/extract-preview` 真机抽帧（单元测试已 mock，可不装也能跑 `pytest`）。
+- 静态访问预览图：`GET /media/<相对于 data/files 的路径>`（与 `preview_frame_relpath` 拼接，例如 `/media/previews/1/2/xxx.png`）。
+
 ## 合规提醒
 
 - `config/standards/` 中 **placeholder** 仅打通流水线；正式验收前必须对照 **DB31/T 444-2022 正文与附录** 重写。

@@ -67,7 +67,7 @@
       "调用抽帧接口生成 png",
       "segment.preview_frame_relpath 可访问"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

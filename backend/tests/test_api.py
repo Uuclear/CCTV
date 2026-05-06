@@ -1,4 +1,8 @@
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
+
+from app.config import settings
 
 
 def test_health(client: TestClient):
@@ -56,3 +60,32 @@ def test_segment_defect_recomputes_indices(client: TestClient):
     )
     r3 = client.get(f"/api/segments/{sid}")
     assert r3.json()["ri"] is not None and r3.json()["ri"] > 0
+
+
+def test_upload_video_and_extract_preview_mocked(
+    client: TestClient, tmp_path, monkeypatch
+) -> None:
+    monkeypatch.setattr(settings, "files_dir", tmp_path)
+    r = client.post("/api/projects", json={"name": "vid-proj"})
+    pid = r.json()["id"]
+    r2 = client.post(f"/api/projects/{pid}/segments", json={})
+    sid = r2.json()["id"]
+    files = {"file": ("clip.mp4", b"fake-bytes", "video/mp4")}
+    r3 = client.post(f"/api/segments/{sid}/video", files=files)
+    assert r3.status_code == 200
+    assert "uploads/" in r3.json()["video_relpath"]
+    with patch("app.routers.segments.video_frames.extract_preview_png", return_value=2.5):
+        r4 = client.post(f"/api/segments/{sid}/extract-preview", json={"margin_sec": 0.5})
+    assert r4.status_code == 200
+    body = r4.json()
+    assert body["sample_time_sec"] == 2.5
+    assert body["preview_frame_relpath"].startswith("previews/")
+
+
+def test_extract_preview_requires_video(client: TestClient) -> None:
+    r = client.post("/api/projects", json={"name": "no-vid"})
+    pid = r.json()["id"]
+    r2 = client.post(f"/api/projects/{pid}/segments", json={})
+    sid = r2.json()["id"]
+    r3 = client.post(f"/api/segments/{sid}/extract-preview", json={})
+    assert r3.status_code == 400

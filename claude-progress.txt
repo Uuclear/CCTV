@@ -2,7 +2,12 @@
 
 ## 2026-05-06
 
-- 已按 long-running agent harness 落地：`AGENTS.md`、`feature_list.json`（前 6 项 `passes: true`）、`claude-progress.txt`、`init.ps1` / `init.sh`、`docs/harness.md`。
-- 后端：`FastAPI` + `SQLAlchemy` 异步 SQLite（可 `DATABASE_URL` 切 Postgres）、`Project` / `Segment` / `Defect` CRUD、占位 `rules.yaml` 驱动 RI/MI 重算；`pytest` 6 条（含 `:memory:` + `StaticPool` + conftest 建表）。
-- 前端：`Vite` + `React` + `TS`，animal-island 风格自有 CSS token，`npm run build` 通过；**尚未**做真实浏览器 E2E，`feature_list` 前端项仍为 `false`。
-- 下一步：ffmpeg 抽帧、OCR、`templates/report` docxtpl、Tauri；将 DB31 正式附录写入 `config/standards/`。
+- 已按 long-running agent harness 落地：`AGENTS.md`、`feature_list.json`、`claude-progress.txt`、`init.ps1` / `init.sh`、`docs/harness.md`。
+- 后端：`FastAPI` + `SQLAlchemy` 异步 SQLite；`Project` / `Segment` / `Defect` CRUD；占位 `rules.yaml` 驱动 RI/MI；`pytest` + `:memory:` 测试。
+- 前端：`Vite` + `React` + `TS`，animal-island 风格自有 CSS token。
+
+## 2026-05-06（续 · 视频抽帧）
+
+- 视频：`POST /api/segments/{id}/video` 上传至 `data/files/uploads/...`；`POST /api/segments/{id}/extract-preview` 调用 ffmpeg/ffprobe 随机时刻抽 PNG，写入 `data/files/previews/...` 并更新 `preview_frame_relpath`；body 可选 `source_absolute`（须在 `repo_root` 或 `files_dir` 下）；`GET /media/...` 静态访问；`path_policy` 防 `..` 穿越。
+- `pytest` 现为 10 条；`feature_list` 中「视频：ffmpeg 抽帧…」已 `passes: true`。
+- 下一步：OCR、docxtpl 报告、PDF、Tauri；DB31 正式附录写入 `config/standards/`。
