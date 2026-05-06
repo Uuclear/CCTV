@@ -22,6 +22,9 @@ frontend/dist/
 .DS_Store
 Thumbs.db
 
+# Word / Office lock files
+~$*
+
 # Large media / field assets (keep local)
 视频/
 **/*.mp4
