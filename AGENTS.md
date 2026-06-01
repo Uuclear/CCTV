@@ -1,56 +1,42 @@
 # AGENTS.md — 导航入口
 
-本仓库：排水管道 CCTV 检测报告系统（DB31/T 444-2022 规则需以正式标准数字化）。新进 Agent **先读本文件**，再按需下钻。
+本仓库：**CCTV 检测项目管理系统** 产品与开发文档（DB31/T 444-2022，首期管道电视检测）。**实施代码前请先读文档，勿仅凭 MinerU 摘要写评估逻辑。**
 
-## 冷启动顺序（每个新会话）
+## 合规（必读）
 
-1. 读 [`claude-progress.txt`](claude-progress.txt) — 上轮交接与风险。
-2. 读 [`feature_list.json`](feature_list.json) — **只改 `passes`，勿改 `steps` 语义**。
-3. 运行 [`init.ps1`](init.ps1)（Windows）或 [`init.sh`](init.sh)（Unix）装依赖。
-4. 按 `feature_list.json` 选 **一条** `passes: false` 的最高优先级项实现；测完再置 `true`。
+- 规程参考：[MinerU_markdown_DB31-T_444-2022排水管道电视和声呐检测评估技术规程_2055030793924440064.md](MinerU_markdown_DB31-T_444-2022排水管道电视和声呐检测评估技术规程_2055030793924440064.md)  
+- **验收依据**：标准正式 PDF；`rules_version` 须与算例单测一并更新。
 
-## 目录
+## 文档地图
 
 | 路径 | 说明 |
 |------|------|
-| [`backend/`](backend/) | FastAPI、SQLite/PostgreSQL、视频/OCR/报告逻辑 |
-| [`frontend/`](frontend/) | React + Vite + TypeScript，视觉参考 animal-island-ui（自有 token，不默认装该 npm 包） |
-| [`config/standards/db31t444-2022/`](config/standards/db31t444-2022/) | 标准规则包；**维护与合规见其中 `README.md`** |
-| [`templates/`](templates/) | [`commission_fields.md`](templates/commission_fields.md) 委托单↔模型↔docx；[`report/jinja_minimal.docx`](templates/report/jinja_minimal.docx) 默认母版；CC01-2 合并见模板目录 README |
-| [`desktop/run-dev.ps1`](desktop/run-dev.ps1) | Windows：同时启动后端与 Vite（非 Tauri） |
-| [`frontend/src-tauri/`](frontend/src-tauri/) | Tauri 2 壳；`cd frontend && npm run tauri:dev` |
-| [`scripts/tauri-dev-bootstrap.mjs`](scripts/tauri-dev-bootstrap.mjs) | Tauri dev：保证 API 就绪后启动 Vite（跨平台） |
-| [`scripts/e2e.ps1`](scripts/e2e.ps1) | 安装 Chromium 并运行 Playwright |
-| [`docs/harness.md`](docs/harness.md) | harness 约定摘要 |
-| [`docs/TAURI.md`](docs/TAURI.md) | Tauri 开发与打包说明 |
+| [docs/PRODUCT.md](docs/PRODUCT.md) | 产品愿景、角色、首期/二期边界 |
+| [docs/CCTV-PM-SDD.md](docs/CCTV-PM-SDD.md) | **主开发文档（SDD）** |
+| [docs/design/evaluation-engine.md](docs/design/evaluation-engine.md) | RI/MI、S/F/Y/G、权重表、算例 |
+| [docs/design/forms-appendix-d.md](docs/design/forms-appendix-d.md) | 电视检测记录表 → UI/Schema |
+| [docs/design/watermark-ocr-extraction.md](docs/design/watermark-ocr-extraction.md) | 批量视频水印 OCR：起止井号/管径/管材/日期解析规则 |
+| [docs/design/domain-model.md](docs/design/domain-model.md) | 实体、状态机 |
+| [docs/api/openapi-outline.md](docs/api/openapi-outline.md) | REST 提纲 |
+| [docs/ui/web-ia.md](docs/ui/web-ia.md) | Web 页面与组件 |
+| [docs/ui/desktop-gui.md](docs/ui/desktop-gui.md) | Tauri 桌面壳 |
+| [docs/templates/report-mapping.md](docs/templates/report-mapping.md) | 委托单 / CC01-2 / xlsx 字段映射 |
 
-## 运行（开发）
+## 业务模板（仓库根目录）
 
-```powershell
-cd backend
-.\.venv\Scripts\Activate.ps1
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
+| 文件 | 用途 |
+|------|------|
+| `公共通道雨水管CCTV委托单.doc` | 委托字段 |
+| `CC01-2  报告模板.docx` | 报告母版 |
+| `公共通道统计表.xlsx` | 管段统计导出对齐 |
+| `视频/` | 样例视频 |
 
-```powershell
-cd frontend
-npm run dev
-```
+## 建议实施顺序
 
-API 文档：<http://127.0.0.1:8000/docs>
+1. `config/standards/db31t444-2022/` 规则包 + TC-EVAL 单测  
+2. FastAPI 领域模型与 API（见 openapi-outline）  
+3. Web 工作台 → 媒体/OCR → 报告 → Tauri  
 
-## 依赖
+## 首期不做
 
-- **ffmpeg / ffprobe**：须安装并在 `PATH` 中，用于 `POST /api/segments/{id}/extract-preview` 真机抽帧（单元测试已 mock，可不装也能跑 `pytest`）。
-- 静态访问预览图：`GET /media/<相对于 data/files 的路径>`（与 `preview_frame_relpath` 拼接，例如 `/media/previews/1/2/xxx.png`）。
-- **LibreOffice**：生成 PDF（`POST /api/projects/{id}/reports/pdf`）需在系统可执行路径中找到 `soffice`；未安装时接口返回 **503**（单元测试使用 mock）。
-- **Linux / WSL 上 Tauri**：编译 Rust 侧常需系统里的 **OpenSSL 头文件**（`libssl-dev`）、**pkg-config** 及 WebKit/GTK 等；若报 `could not find openssl development headers`，按 [`docs/TAURI.md`](docs/TAURI.md) 安装依赖后再 `npm run tauri:dev`。
-
-## 桌面
-
-- **Tauri**（原生窗口）：`cd frontend`，`npm run tauri:dev`（见 [`docs/TAURI.md`](docs/TAURI.md)）。
-- **双进程 + 浏览器**：Windows 可用 [`desktop/run-dev.ps1`](desktop/run-dev.ps1)（需已 `init`）。
-
-## 合规提醒
-
-- `config/standards/` 中 **placeholder** 仅打通流水线；正式验收前必须对照 **DB31/T 444-2022 正文与附录** 重写。
+声呐、检查井、GIS 上报、QV/无人机/数字化电视 — 见 SDD §14。

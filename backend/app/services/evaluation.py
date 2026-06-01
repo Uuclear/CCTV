@@ -62,11 +62,15 @@ def evaluate_segment(
 
     F = 0.0
     G = 0.0
+    func_table = rules.get("functional_defects", {})
     for code, level, kind in defects:
         w = defect_contribution(rules, code, level, kind)
         if kind == "structural":
             F = max(F, w)
         else:
+            row = func_table.get(code, {})
+            if row.get("mi_exclude"):
+                continue
             G = max(G, w)
 
     comp = rules.get("computation") or {}

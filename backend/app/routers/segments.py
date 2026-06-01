@@ -17,9 +17,12 @@ from app.schemas import (
     SegmentCreate,
     SegmentRead,
     SegmentReadWithSample,
+    SegmentSummaryRead,
     SegmentUpdate,
 )
-from app.services import ocr_text, pipe_regex, video_frames
+from app.services import ocr_text, video_frames
+from app.services.watermark_parse import ocr_lines_to_blocks, parse_from_text_blocks
+from app.grading import normalize_condition_grade
 from app.services.evaluation import evaluate_segment, load_rules
 from app.services.path_policy import resolve_absolute_allowed, resolve_under_dir
 
@@ -34,8 +37,9 @@ async def _recompute_segment(db: AsyncSession, seg: Segment) -> None:
     result = evaluate_segment(rules, triples)
     seg.ri = result.ri
     seg.mi = result.mi
-    seg.ri_grade = result.ri_grade
-    seg.mi_grade = result.mi_grade
+    seg.repair_index = result.ri
+    seg.ri_grade = normalize_condition_grade(result.ri_grade, result.ri)
+    seg.mi_grade = normalize_condition_grade(result.mi_grade, result.mi)
 
 
 def _safe_upload_name(name: str | None) -> str:
@@ -54,31 +58,99 @@ async def create_segment(
     p = await db.get(Project, project_id)
     if not p:
         raise HTTPException(status_code=404, detail="project not found")
-    seg = Segment(project_id=project_id, **body.model_dump())
+    data = body.model_dump()
+    for key in ("ri", "mi", "repair_index", "ri_grade", "mi_grade"):
+        data.pop(key, None)
+    seg = Segment(
+        project_id=project_id,
+        ri=0.0,
+        mi=0.0,
+        repair_index=0.0,
+        ri_grade="一级",
+        mi_grade="一级",
+        **data,
+    )
     db.add(seg)
     await db.commit()
     await db.refresh(seg)
     await _recompute_segment(db, seg)
     await db.commit()
     await db.refresh(seg)
-    return seg
+    seg.ri_grade = normalize_condition_grade(seg.ri_grade, seg.ri)
+    seg.mi_grade = normalize_condition_grade(seg.mi_grade, seg.mi)
+    await db.commit()
+    await db.refresh(seg)
+    return SegmentRead(**_segment_read_dict(seg))
 
 
-@router.get("/api/projects/{project_id}/segments", response_model=list[SegmentRead])
-async def list_segments(project_id: int, db: AsyncSession = Depends(get_db)) -> Sequence[Segment]:
+def _segment_read_dict(seg: Segment, defect_count: int = 0) -> dict:
+    base = SegmentRead.model_validate(seg).model_dump()
+    base["ri_grade"] = normalize_condition_grade(seg.ri_grade, seg.ri)
+    base["mi_grade"] = normalize_condition_grade(seg.mi_grade, seg.mi)
+    if seg.ri is not None:
+        base["repair_index"] = seg.ri
+    return base
+
+
+def _defect_summary(defects: list[Defect]) -> tuple[int, str | None]:
+    if not defects:
+        return 0, "无"
+    parts = [f"{d.defect_code}·L{d.level}" for d in defects[:8]]
+    text = "；".join(parts)
+    if len(defects) > 8:
+        text += f" 等{len(defects)}项"
+    return len(defects), text
+
+
+@router.get("/api/projects/{project_id}/segments", response_model=list[SegmentSummaryRead])
+async def list_segments(project_id: int, db: AsyncSession = Depends(get_db)) -> list[SegmentSummaryRead]:
     p = await db.get(Project, project_id)
     if not p:
         raise HTTPException(status_code=404, detail="project not found")
     r = await db.execute(select(Segment).where(Segment.project_id == project_id).order_by(Segment.id))
-    return r.scalars().all()
+    segs = list(r.scalars().all())
+    if not segs:
+        return []
+    seg_ids = [s.id for s in segs]
+    dr = await db.execute(select(Defect).where(Defect.segment_id.in_(seg_ids)))
+    by_seg: dict[int, list[Defect]] = {}
+    for d in dr.scalars().all():
+        by_seg.setdefault(d.segment_id, []).append(d)
+    out: list[SegmentSummaryRead] = []
+    for seg in segs:
+        dlist = by_seg.get(seg.id, [])
+        cnt, summ = _defect_summary(dlist)
+        data = _segment_read_dict(seg, cnt)
+        out.append(SegmentSummaryRead(**data, defect_count=cnt, defect_summary=summ))
+    return out
 
 
 @router.get("/api/segments/{segment_id}", response_model=SegmentRead)
-async def get_segment(segment_id: int, db: AsyncSession = Depends(get_db)) -> Segment:
+async def get_segment(segment_id: int, db: AsyncSession = Depends(get_db)) -> SegmentRead:
     seg = await db.get(Segment, segment_id)
     if not seg:
         raise HTTPException(status_code=404, detail="segment not found")
-    return seg
+    return SegmentRead(**_segment_read_dict(seg))
+
+
+async def _delete_segment_row(segment_id: int, db: AsyncSession) -> None:
+    seg = await db.get(Segment, segment_id)
+    if not seg:
+        raise HTTPException(status_code=404, detail="segment not found")
+    await db.delete(seg)
+    await db.commit()
+
+
+@router.delete("/api/segments/{segment_id}", status_code=204)
+async def delete_segment(segment_id: int, db: AsyncSession = Depends(get_db)) -> None:
+    await _delete_segment_row(segment_id, db)
+
+
+@router.post("/api/segments/{segment_id}/remove")
+async def remove_segment(segment_id: int, db: AsyncSession = Depends(get_db)) -> dict:
+    """POST alias for clients/proxies that block DELETE."""
+    await _delete_segment_row(segment_id, db)
+    return {"ok": True, "id": segment_id}
 
 
 @router.patch("/api/segments/{segment_id}", response_model=SegmentRead)
@@ -94,7 +166,12 @@ async def patch_segment(
         setattr(seg, k, v)
     await db.commit()
     await db.refresh(seg)
-    return seg
+    seg2 = await db.get(Segment, segment_id)
+    assert seg2 is not None
+    await _recompute_segment(db, seg2)
+    await db.commit()
+    await db.refresh(seg)
+    return SegmentRead(**_segment_read_dict(seg2))
 
 
 @router.post("/api/segments/{segment_id}/video", response_model=SegmentRead)
@@ -146,11 +223,12 @@ async def extract_segment_preview(
     out_path = resolve_under_dir(settings.files_dir, out_rel)
 
     try:
+        seed = body.seed if body.seed is not None else seg.id
         t = video_frames.extract_preview_png(
             video_path,
             out_path,
             margin_sec=body.margin_sec,
-            seed=body.seed,
+            seed=seed,
         )
     except video_frames.VideoProbeError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
@@ -158,6 +236,7 @@ async def extract_segment_preview(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
     seg.preview_frame_relpath = out_rel.replace("\\", "/")
+    seg.preview_sample_time_sec = t
     await db.commit()
     await db.refresh(seg)
     row = SegmentRead.model_validate(seg)
@@ -177,13 +256,25 @@ async def ocr_segment_preview(
     img = resolve_under_dir(settings.files_dir, seg.preview_frame_relpath)
     if not img.is_file():
         raise HTTPException(status_code=400, detail="preview image missing on disk")
-    raw = ocr_text.image_to_text(img)
-    a, b = pipe_regex.suggest_pipe_range(raw)
-    engine = "rapidocr_onnxruntime" if raw else "none"
+    ocr_res = ocr_text.image_to_text(img)
+    stem = (seg.original_filename or "segment").rsplit(".", 1)[0]
+    pr = parse_from_text_blocks(ocr_lines_to_blocks(ocr_res.text), stem)
+    engine = ocr_res.engine if ocr_res.available else "none"
     return OcrPreviewOut(
-        raw_text=raw,
-        suggested_chain_start=a,
-        suggested_chain_end=b,
+        raw_text=ocr_res.text,
+        suggested_chain_start=pr.chain_start_label,
+        suggested_chain_end=pr.chain_end_label,
+        suggested_diameter_mm=pr.diameter_mm,
+        suggested_pipe_material=pr.pipe_material,
+        suggested_inspection_date=pr.inspection_date,
+        parse={
+            "chain_parse_mode": pr.chain_parse_mode,
+            "chain_confidence": pr.chain_confidence,
+            "chain_warnings": pr.chain_warnings,
+            "field_confidence": pr.field_confidence,
+            "ocr_blocks_used": pr.ocr_blocks_used,
+            "ocr_error": ocr_res.error,
+        },
         engine=engine,
     )
 

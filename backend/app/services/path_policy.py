@@ -1,5 +1,8 @@
 """Resolve user-supplied paths under allowed roots only."""
+from __future__ import annotations
+
 from pathlib import Path
+from typing import Literal
 
 from fastapi import HTTPException, status
 
@@ -29,13 +32,42 @@ def is_under_any_root(path: Path, roots: list[Path]) -> bool:
     return False
 
 
+def _candidate_paths(path_str: str, roots: list[Path]) -> list[Path]:
+    raw = Path(path_str).expanduser()
+    if raw.is_absolute():
+        return [raw.resolve()]
+    return [(root / raw).resolve() for root in roots]
+
+
+def resolve_path_under_roots(
+    path_str: str,
+    roots: list[Path],
+    *,
+    kind: Literal["file", "dir", "any"] = "any",
+) -> Path:
+    """Resolve absolute or root-relative path; must exist under one of roots."""
+    tried: list[str] = []
+    for p in _candidate_paths(path_str, roots):
+        tried.append(str(p))
+        if not p.exists():
+            continue
+        if not is_under_any_root(p, roots):
+            continue
+        if kind == "file" and not p.is_file():
+            continue
+        if kind == "dir" and not p.is_dir():
+            continue
+        return p
+
+    if kind == "dir":
+        detail = f"directory not found or not allowed: {path_str}"
+    elif kind == "file":
+        detail = f"file not found or not allowed: {path_str}"
+    else:
+        detail = f"path not found or not allowed: {path_str}"
+    raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=detail)
+
+
 def resolve_absolute_allowed(path_str: str, roots: list[Path]) -> Path:
-    p = Path(path_str).expanduser().resolve()
-    if not p.is_file():
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="video file not found")
-    if not is_under_any_root(p, roots):
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            detail="video path must be under configured media roots",
-        )
-    return p
+    """Backward-compatible alias for video / file paths."""
+    return resolve_path_under_roots(path_str, roots, kind="file")

@@ -58,6 +58,44 @@ def test_segment_list_and_patch(client: TestClient):
     assert r3.json()["chain_start_label"] == "A1"
 
 
+def test_segment_delete(client: TestClient):
+    r = client.post("/api/projects", json={"name": "del-test"})
+    pid = r.json()["id"]
+    r2 = client.post(f"/api/projects/{pid}/segments", json={"display_name": "x"})
+    sid = r2.json()["id"]
+    r_del = client.post(f"/api/segments/{sid}/remove")
+    assert r_del.status_code == 200
+    assert r_del.json()["ok"] is True
+    assert client.get(f"/api/segments/{sid}").status_code == 404
+
+
+def test_standards_defect_catalog(client: TestClient):
+    r = client.get("/api/standards/defects")
+    assert r.status_code == 200
+    items = r.json()
+    codes = {x["code"] for x in items}
+    assert "PL" in codes and "CJ" in codes and "CW" in codes
+    assert len(items) >= 15
+
+
+def test_list_segments_grade_labels(client: TestClient):
+    r = client.post("/api/projects", json={"name": "grade-list"})
+    pid = r.json()["id"]
+    client.post(f"/api/projects/{pid}/segments", json={})
+    rows = client.get(f"/api/projects/{pid}/segments").json()
+    assert rows[0]["ri_grade"] in ("一级", "二级", "三级")
+    assert rows[0]["mi_grade"] in ("一级", "二级", "三级")
+
+
+def test_segment_create_default_grades(client: TestClient):
+    r = client.post("/api/projects", json={"name": "grade-test"})
+    pid = r.json()["id"]
+    r2 = client.post(f"/api/projects/{pid}/segments", json={})
+    body = r2.json()
+    assert body["ri_grade"] == "一级"
+    assert body["mi_grade"] == "一级"
+
+
 def test_segment_defect_recomputes_indices(client: TestClient):
     r = client.post("/api/projects", json={"name": "seg-test"})
     pid = r.json()["id"]

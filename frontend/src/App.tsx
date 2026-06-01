@@ -1,41 +1,30 @@
 import { useEffect, useState } from "react";
-import { createProject, fetchProjects, type Project } from "./api";
+import { fetchProjects, type Project } from "./api";
+import { formatFetchError } from "./apiErrors";
+import { ProjectCreateForm } from "./ProjectCreateForm";
 import { ProjectWorkbench } from "./ProjectWorkbench";
 
 export default function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [err, setErr] = useState<string | null>(null);
-  const [name, setName] = useState("新检测工程");
-  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [workbenchId, setWorkbenchId] = useState<number | null>(null);
 
   async function load() {
     setErr(null);
+    setLoading(true);
     try {
       setProjects(await fetchProjects());
     } catch (e) {
-      setErr(String(e));
+      setErr(formatFetchError(e));
+    } finally {
+      setLoading(false);
     }
   }
 
   useEffect(() => {
     void load();
   }, []);
-
-  async function onCreate(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setErr(null);
-    try {
-      await createProject({ name, client_org: null, project_code: null });
-      setName("新检测工程");
-      await load();
-    } catch (e) {
-      setErr(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
 
   if (workbenchId != null) {
     return (
@@ -58,34 +47,26 @@ export default function App() {
         </div>
       </header>
       <main className="main">
-        <section className="card">
-          <h2 className="card-title">新建项目</h2>
-          <form className="row" onSubmit={(e) => void onCreate(e)}>
-            <label className="field">
-              <span>工程名称</span>
-              <input
-                data-testid="project-name-input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                minLength={1}
-              />
-            </label>
-            <button
-              data-testid="create-project-submit"
-              className="btn primary"
-              type="submit"
-              disabled={busy}
-            >
-              {busy ? "保存中…" : "创建"}
+        <ProjectCreateForm
+          onCreated={(id) => {
+            setWorkbenchId(id);
+            void load();
+          }}
+        />
+        {err ? (
+          <div className="error-block">
+            <pre className="error-pre">{err}</pre>
+            <button type="button" className="btn secondary" onClick={() => void load()}>
+              重试连接后端
             </button>
-          </form>
-          {err ? <p className="error">{err}</p> : null}
-        </section>
+          </div>
+        ) : null}
         <section className="card">
           <h2 className="card-title">项目列表</h2>
-          {projects.length === 0 ? (
-            <p className="muted">暂无项目。请先创建或启动后端。</p>
+          {loading ? (
+            <p className="muted">正在连接后端…</p>
+          ) : projects.length === 0 ? (
+            <p className="muted">暂无项目。请先创建工程，或确认已用 run-dev.ps1 启动前后端。</p>
           ) : (
             <ul className="list">
               {projects.map((p) => (

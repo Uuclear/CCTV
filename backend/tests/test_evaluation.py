@@ -49,8 +49,8 @@ def test_computation_coefficients_apply():
     r = evaluate_segment(rules, [("PL", 4, "structural")], K=1.0, E=1.0, T=1.0)
     # F=10, RI=7
     assert r.ri == 7.0
-    r2 = evaluate_segment(rules, [("CJ", 4, "functional")], K=1.0, E=1.0, T=1.0)
-    assert r2.mi == 7.0
+    r2 = evaluate_segment(rules, [("CJ", 3, "functional")], K=1.0, E=1.0, T=1.0)
+    assert r2.mi == 3.5
 
 
 def test_grade_thresholds_level_2():
@@ -67,7 +67,7 @@ def test_max_of_multiple_structural_defects():
         rules,
         [
             ("PL", 1, "structural"),
-            ("CK", 4, "structural"),
+            ("CW", 4, "structural"),
         ],
     )
     assert r.ri == 10.0
