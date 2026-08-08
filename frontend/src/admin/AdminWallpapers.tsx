@@ -29,14 +29,25 @@ export default function AdminWallpapers() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  /** 拉取草稿可见的壁纸列表 */
+  /** 分页拉取全部壁纸（含草稿） */
   async function load() {
-    const [list, cats] = await Promise.all([
-      api.wallpapers({ include_drafts: true, page_size: 500, sort: "newest" }, true),
-      api.categories(false),
-    ]);
-    setItems(list.items);
+    const cats = await api.categories(false);
     setCategories(cats);
+    const pageSize = 500;
+    const first = await api.wallpapers(
+      { include_drafts: true, page_size: pageSize, page: 1, sort: "newest" },
+      true,
+    );
+    const all = [...first.items];
+    const pages = Math.ceil(first.total / pageSize);
+    for (let p = 2; p <= pages; p += 1) {
+      const res = await api.wallpapers(
+        { include_drafts: true, page_size: pageSize, page: p, sort: "newest" },
+        true,
+      );
+      all.push(...res.items);
+    }
+    setItems(all);
   }
 
   useEffect(() => {

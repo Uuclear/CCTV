@@ -43,4 +43,13 @@ backend/     FastAPI 服务、种子数据、上传目录
 frontend/    React 前台与管理界面
 ```
 
-首次启动会自动写入示例分类与壁纸（Unsplash 外链）。
+首次启动会自动写入示例分类与少量壁纸（Unsplash 外链）。
+
+### 批量灌入约 2000 张壁纸
+
+```bash
+cd backend && source .venv/bin/activate
+PYTHONPATH=. python scripts/bulk_seed_wallpapers.py --count 2000
+```
+
+图片使用 `picsum.photos` 确定性外链（按 seed 生成），会均匀分配到各分类。可重复执行以继续追加。
