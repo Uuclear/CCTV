@@ -20,6 +20,12 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
         "http://localhost:4173",
     ]
+    # AI 许愿池：运行时文生图（Cursor 生图为 Agent 工具，后端无法直连）
+    ai_image_provider: str = "pollinations"
+    ai_image_model: str = "flux"
+    ai_default_width: int = 1920
+    ai_default_height: int = 1080
+    ai_wish_auto_publish: bool = True
 
 
 settings = Settings()

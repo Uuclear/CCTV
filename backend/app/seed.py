@@ -49,6 +49,13 @@ SEED_CATEGORIES = [
         "cover_url": "https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=1200&q=80",
         "sort_order": 6,
     },
+    {
+        "name": "AI许愿",
+        "slug": "ai-wish",
+        "description": "由许愿池 Prompt 生成的 AI 壁纸",
+        "cover_url": "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=1200&q=80",
+        "sort_order": 99,
+    },
 ]
 
 

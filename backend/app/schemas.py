@@ -108,3 +108,40 @@ class StatsOut(BaseModel):
     total_views: int
     total_downloads: int
     total_likes: int
+    wish_count: int = 0
+    wish_done_count: int = 0
+
+
+class WishIn(BaseModel):
+    """提交 AI 壁纸许愿。"""
+
+    prompt: str = Field(min_length=2, max_length=1200)
+    author_name: str = Field(default="匿名", max_length=64)
+    width: int = Field(default=1920, ge=512, le=2560)
+    height: int = Field(default=1080, ge=512, le=2560)
+
+
+class WishOut(BaseModel):
+    """许愿对外输出。"""
+
+    id: int
+    prompt: str
+    author_name: str
+    status: str
+    width: int
+    height: int
+    provider: str
+    image_url: str
+    error_message: str
+    wallpaper_id: int | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class WishListOut(BaseModel):
+    """许愿列表。"""
+
+    total: int
+    items: list[WishOut]

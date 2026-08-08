@@ -11,11 +11,13 @@ import com.muse.walls.MuseApp
 import com.muse.walls.data.Category
 import com.muse.walls.data.MuseApi
 import com.muse.walls.data.Wallpaper
+import com.muse.walls.data.Wish
 import com.muse.walls.wallpaper.WallpaperSetter
 import com.muse.walls.wallpaper.WallpaperTarget
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -56,8 +58,21 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var settingsSaving by mutableStateOf(false)
         private set
+    var wishPrompt by mutableStateOf("")
+        private set
+    var wishAuthor by mutableStateOf("")
+        private set
+    var wishes by mutableStateOf<List<Wish>>(emptyList())
+        private set
+    var wishTotal by mutableStateOf(0)
+        private set
+    var wishSubmitting by mutableStateOf(false)
+        private set
+    var wishMessage by mutableStateOf<String?>(null)
+        private set
 
     private var searchJob: Job? = null
+    private var wishPollJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -218,6 +233,88 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 settingsMsg = e.message
             } finally {
                 settingsSaving = false
+            }
+        }
+    }
+
+    fun onWishPromptChange(value: String) {
+        wishPrompt = value
+    }
+
+    fun onWishAuthorChange(value: String) {
+        wishAuthor = value
+    }
+
+    /** 进入许愿池时加载列表并轮询 */
+    fun openWishPool() {
+        viewModelScope.launch {
+            wishMessage = null
+            reloadWishes()
+            startWishPolling()
+        }
+    }
+
+    fun stopWishPolling() {
+        wishPollJob?.cancel()
+        wishPollJob = null
+    }
+
+    /** 提交许愿 Prompt */
+    fun submitWish() {
+        viewModelScope.launch {
+            wishSubmitting = true
+            wishMessage = null
+            try {
+                api.createWish(
+                    prompt = wishPrompt.trim(),
+                    author = wishAuthor.ifBlank { "匿名" },
+                    width = 1080,
+                    height = 1920,
+                )
+                wishPrompt = ""
+                wishMessage = "已投入许愿池，正在生成…"
+                reloadWishes()
+                startWishPolling()
+            } catch (e: Exception) {
+                wishMessage = e.message ?: "提交失败"
+            } finally {
+                wishSubmitting = false
+            }
+        }
+    }
+
+    /** 重试失败许愿 */
+    fun retryWish(wish: Wish) {
+        viewModelScope.launch {
+            try {
+                api.retryWish(wish.id)
+                wishMessage = "已重新排队"
+                reloadWishes()
+                startWishPolling()
+            } catch (e: Exception) {
+                wishMessage = e.message
+            }
+        }
+    }
+
+    private suspend fun reloadWishes() {
+        val list = api.wishes(pageSize = 40)
+        wishes = list.items
+        wishTotal = list.total
+    }
+
+    private fun startWishPolling() {
+        wishPollJob?.cancel()
+        wishPollJob = viewModelScope.launch {
+            while (isActive) {
+                val busy = wishes.any { it.status == "pending" || it.status == "generating" }
+                if (!busy) break
+                delay(4000)
+                try {
+                    reloadWishes()
+                } catch (_: Exception) {
+                    // 忽略轮询错误
+                }
             }
         }
     }

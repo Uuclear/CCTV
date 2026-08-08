@@ -33,3 +33,21 @@ data class WallpaperList(
     val total: Int,
     val items: List<Wallpaper>,
 )
+
+data class Wish(
+    val id: Int,
+    val prompt: String,
+    val author_name: String = "匿名",
+    val status: String = "pending",
+    val width: Int = 1920,
+    val height: Int = 1080,
+    val provider: String = "",
+    val image_url: String = "",
+    val error_message: String = "",
+    val wallpaper_id: Int? = null,
+)
+
+data class WishList(
+    val total: Int,
+    val items: List<Wish>,
+)

@@ -63,3 +63,24 @@ class Wallpaper(Base):
     )
 
     category: Mapped[Category | None] = relationship(back_populates="wallpapers")
+
+
+class Wish(Base):
+    """AI 壁纸许愿条目。"""
+
+    __tablename__ = "wishes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    prompt: Mapped[str] = mapped_column(Text)
+    author_name: Mapped[str] = mapped_column(String(64), default="匿名")
+    status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
+    width: Mapped[int] = mapped_column(Integer, default=1920)
+    height: Mapped[int] = mapped_column(Integer, default=1080)
+    provider: Mapped[str] = mapped_column(String(64), default="pollinations")
+    image_url: Mapped[str] = mapped_column(String(512), default="")
+    error_message: Mapped[str] = mapped_column(Text, default="")
+    wallpaper_id: Mapped[int | None] = mapped_column(ForeignKey("wallpapers.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )

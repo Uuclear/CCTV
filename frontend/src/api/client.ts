@@ -1,6 +1,6 @@
 /** 前端 API 客户端：封装鉴权与请求 */
 
-import type { Category, Stats, Wallpaper, WallpaperList } from "./types";
+import type { Category, Stats, Wallpaper, WallpaperList, Wish, WishList } from "./types";
 
 const TOKEN_KEY = "muse_admin_token";
 
@@ -107,4 +107,35 @@ export const api = {
   /** 上传壁纸文件 */
   uploadWallpaper: (form: FormData) =>
     request<Wallpaper>("/api/wallpapers/upload", { method: "POST", body: form }, true),
+
+  /** 许愿列表 */
+  wishes: (params: Record<string, string | number | undefined> = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== "") qs.set(k, String(v));
+    });
+    return request<WishList>(`/api/wishes?${qs}`);
+  },
+
+  /** 单条许愿 */
+  wish: (id: number) => request<Wish>(`/api/wishes/${id}`),
+
+  /** 提交许愿 Prompt */
+  createWish: (body: {
+    prompt: string;
+    author_name?: string;
+    width?: number;
+    height?: number;
+  }) =>
+    request<Wish>("/api/wishes", { method: "POST", body: JSON.stringify(body) }),
+
+  /** 重试生成 */
+  retryWish: (id: number) =>
+    request<Wish>(`/api/wishes/${id}/retry`, { method: "POST" }),
+
+  /** 生图提供方说明 */
+  wishProvider: () =>
+    request<{ provider: string; model: string; cursor_native: boolean; note: string }>(
+      "/api/wishes/meta/provider",
+    ),
 };

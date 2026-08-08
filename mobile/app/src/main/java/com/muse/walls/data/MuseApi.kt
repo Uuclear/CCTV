@@ -4,8 +4,10 @@ package com.muse.walls.data
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
@@ -18,6 +20,7 @@ class MuseApi(private val baseUrlProvider: () -> String) {
 
     /** 将相对路径补全为绝对 URL */
     fun resolveUrl(path: String): String {
+        if (path.isBlank()) return ""
         if (path.startsWith("http://") || path.startsWith("https://")) return path
         val base = baseUrlProvider().trimEnd('/')
         return if (path.startsWith("/")) "$base$path" else "$base/$path"
@@ -76,6 +79,60 @@ class MuseApi(private val baseUrlProvider: () -> String) {
         parseWallpaper(JSONObject(post("/api/wallpapers/$id/download")))
     }
 
+    /** 许愿列表 */
+    suspend fun wishes(page: Int = 1, pageSize: Int = 30): WishList =
+        withContext(Dispatchers.IO) {
+            val url = (resolveUrl("/api/wishes")).toHttpUrl().newBuilder()
+                .addQueryParameter("page", page.toString())
+                .addQueryParameter("page_size", pageSize.toString())
+                .build()
+            val root = JSONObject(getAbsolute(url.toString()))
+            val arr = root.getJSONArray("items")
+            WishList(
+                total = root.getInt("total"),
+                items = (0 until arr.length()).map { parseWish(arr.getJSONObject(it)) },
+            )
+        }
+
+    /** 提交许愿 */
+    suspend fun createWish(
+        prompt: String,
+        author: String,
+        width: Int,
+        height: Int,
+    ): Wish = withContext(Dispatchers.IO) {
+        val body = JSONObject()
+            .put("prompt", prompt)
+            .put("author_name", author)
+            .put("width", width)
+            .put("height", height)
+            .toString()
+        val reqBody = body.toRequestBody("application/json; charset=utf-8".toMediaType())
+        val res = client.newCall(
+            Request.Builder().url(resolveUrl("/api/wishes")).post(reqBody).build(),
+        ).execute()
+        if (!res.isSuccessful) error("许愿失败 ${res.code}: ${res.body?.string()}")
+        parseWish(JSONObject(res.body?.string() ?: error("空响应")))
+    }
+
+    /** 重试许愿 */
+    suspend fun retryWish(id: Int): Wish = withContext(Dispatchers.IO) {
+        parseWish(JSONObject(post("/api/wishes/$id/retry")))
+    }
+
+    private fun parseWish(o: JSONObject): Wish = Wish(
+        id = o.getInt("id"),
+        prompt = o.getString("prompt"),
+        author_name = o.optString("author_name", "匿名"),
+        status = o.optString("status", "pending"),
+        width = o.optInt("width", 1920),
+        height = o.optInt("height", 1080),
+        provider = o.optString("provider"),
+        image_url = resolveUrl(o.optString("image_url")),
+        error_message = o.optString("error_message"),
+        wallpaper_id = if (o.isNull("wallpaper_id")) null else o.optInt("wallpaper_id"),
+    )
+
     private fun parseWallpaper(o: JSONObject): Wallpaper = Wallpaper(
         id = o.getInt("id"),
         title = o.getString("title"),
@@ -103,7 +160,7 @@ class MuseApi(private val baseUrlProvider: () -> String) {
     }
 
     private fun post(path: String): String {
-        val body = okhttp3.RequestBody.create(null, ByteArray(0))
+        val body = ByteArray(0).toRequestBody(null)
         val res = client.newCall(
             Request.Builder().url(resolveUrl(path)).post(body).build(),
         ).execute()

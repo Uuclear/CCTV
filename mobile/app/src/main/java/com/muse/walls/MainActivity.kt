@@ -14,6 +14,7 @@ import com.muse.walls.ui.AppViewModel
 import com.muse.walls.ui.DetailScreen
 import com.muse.walls.ui.HomeScreen
 import com.muse.walls.ui.SettingsScreen
+import com.muse.walls.ui.WishPoolScreen
 import com.muse.walls.ui.theme.MuseTheme
 import com.muse.walls.wallpaper.WallpaperTarget
 
@@ -52,9 +53,31 @@ private fun MuseNav(vm: AppViewModel) {
                     nav.navigate("detail")
                 },
                 onLoadMore = vm::loadMore,
+                onWishPool = {
+                    vm.openWishPool()
+                    nav.navigate("wish")
+                },
                 onSettings = {
                     vm.loadSettings()
                     nav.navigate("settings")
+                },
+            )
+        }
+        composable("wish") {
+            WishPoolScreen(
+                prompt = vm.wishPrompt,
+                author = vm.wishAuthor,
+                wishes = vm.wishes,
+                total = vm.wishTotal,
+                submitting = vm.wishSubmitting,
+                message = vm.wishMessage,
+                onPromptChange = vm::onWishPromptChange,
+                onAuthorChange = vm::onWishAuthorChange,
+                onSubmit = vm::submitWish,
+                onRetry = vm::retryWish,
+                onBack = {
+                    vm.stopWishPolling()
+                    nav.popBackStack()
                 },
             )
         }

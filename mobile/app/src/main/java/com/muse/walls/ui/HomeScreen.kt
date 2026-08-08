@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -58,6 +59,7 @@ fun HomeScreen(
     onCategory: (String) -> Unit,
     onOpen: (Wallpaper) -> Unit,
     onLoadMore: () -> Unit,
+    onWishPool: () -> Unit,
     onSettings: () -> Unit,
 ) {
     Scaffold(
@@ -74,6 +76,9 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onWishPool) {
+                        Icon(Icons.Outlined.AutoAwesome, contentDescription = "AI 许愿池")
+                    }
                     IconButton(onClick = onSettings) {
                         Icon(Icons.Outlined.Settings, contentDescription = "服务端设置")
                     }

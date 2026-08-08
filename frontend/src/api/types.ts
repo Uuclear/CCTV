@@ -49,6 +49,28 @@ export interface Stats {
   total_views: number;
   total_downloads: number;
   total_likes: number;
+  wish_count?: number;
+  wish_done_count?: number;
+}
+
+export interface Wish {
+  id: number;
+  prompt: string;
+  author_name: string;
+  status: "pending" | "generating" | "done" | "failed" | string;
+  width: number;
+  height: number;
+  provider: string;
+  image_url: string;
+  error_message: string;
+  wallpaper_id: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WishList {
+  total: number;
+  items: Wish[];
 }
 
 export type ViewMode = "masonry" | "grid" | "cinema" | "river";

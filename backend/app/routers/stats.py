@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import get_current_admin
 from app.db import get_db
-from app.models import AdminUser, Category, Wallpaper
+from app.models import AdminUser, Category, Wallpaper, Wish
 from app.schemas import StatsOut
 
 router = APIRouter(prefix="/api/stats", tags=["stats"])
@@ -30,6 +30,10 @@ def get_stats(
     total_views = db.query(func.coalesce(func.sum(Wallpaper.views), 0)).scalar() or 0
     total_downloads = db.query(func.coalesce(func.sum(Wallpaper.downloads), 0)).scalar() or 0
     total_likes = db.query(func.coalesce(func.sum(Wallpaper.likes), 0)).scalar() or 0
+    wish_count = db.query(func.count(Wish.id)).scalar() or 0
+    wish_done_count = (
+        db.query(func.count(Wish.id)).filter(Wish.status == "done").scalar() or 0
+    )
     return StatsOut(
         wallpaper_count=wallpaper_count,
         published_count=published_count,
@@ -38,4 +42,6 @@ def get_stats(
         total_views=int(total_views),
         total_downloads=int(total_downloads),
         total_likes=int(total_likes),
+        wish_count=wish_count,
+        wish_done_count=wish_done_count,
     )

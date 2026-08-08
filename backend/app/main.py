@@ -7,8 +7,9 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.db import Base, SessionLocal, engine
-from app.routers import auth, categories, stats, wallpapers
+from app.routers import auth, categories, stats, wallpapers, wishes
 from app.seed import ensure_seed
+from app.services.ai_generate import ensure_ai_category
 
 
 @asynccontextmanager
@@ -18,6 +19,7 @@ async def lifespan(_: FastAPI):
     db = SessionLocal()
     try:
         ensure_seed(db)
+        ensure_ai_category(db)
     finally:
         db.close()
     yield
@@ -35,6 +37,7 @@ app.include_router(auth.router)
 app.include_router(categories.router)
 app.include_router(wallpapers.router)
 app.include_router(stats.router)
+app.include_router(wishes.router)
 app.mount("/uploads", StaticFiles(directory=str(settings.upload_dir)), name="uploads")
 
 

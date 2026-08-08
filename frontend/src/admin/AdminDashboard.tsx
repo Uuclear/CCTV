@@ -21,6 +21,8 @@ export default function AdminDashboard() {
     { label: "总浏览", value: stats.total_views },
     { label: "总喜欢", value: stats.total_likes },
     { label: "总下载", value: stats.total_downloads },
+    { label: "许愿总数", value: stats.wish_count ?? 0 },
+    { label: "许愿已兑现", value: stats.wish_done_count ?? 0 },
   ];
 
   return (

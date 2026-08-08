@@ -10,6 +10,7 @@ export default function SiteHeader() {
       </Link>
       <nav className="nav-links" aria-label="主导航">
         <Link to="/gallery">壁纸馆</Link>
+        <Link to="/wish">许愿池</Link>
         <Link to="/categories">分类</Link>
         <Link to="/admin">管理</Link>
       </nav>

@@ -45,3 +45,10 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 - 部分定制 ROM 可能限制锁屏壁纸 API，失败时会提示错误信息
 - 相对路径上传图（`/uploads/...`）会自动拼接 Base URL
+
+## AI 许愿池
+
+首页右上角星星图标进入。填写 Prompt 提交后，后端异步生成；生成中会自动轮询。
+
+说明：Cursor 内置生图不能被 APK/后端直接调用，运行时使用服务端配置的 Pollinations 文生图。
+

@@ -29,3 +29,16 @@ def test_admin_login_and_stats():
     stats = client.get("/api/stats", headers={"Authorization": f"Bearer {token}"})
     assert stats.status_code == 200
     assert stats.json()["category_count"] >= 1
+
+
+def test_wish_provider_and_create():
+    """许愿池提供方信息与提交接口可用。"""
+    meta = client.get("/api/wishes/meta/provider")
+    assert meta.status_code == 200
+    assert meta.json()["cursor_native"] is False
+    created = client.post(
+        "/api/wishes",
+        json={"prompt": "minimal soft gradient wallpaper for phone", "width": 512, "height": 512},
+    )
+    assert created.status_code == 201
+    assert created.json()["status"] in {"pending", "generating", "done"}
