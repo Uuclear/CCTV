@@ -34,7 +34,7 @@ def list_wallpapers(
     featured: bool | None = None,
     sort: str = Query("newest", pattern="^(newest|popular|likes|downloads)$"),
     page: int = Query(1, ge=1),
-    page_size: int = Query(24, ge=1, le=100),
+    page_size: int = Query(24, ge=1, le=500),
     include_drafts: bool = False,
 ) -> WallpaperListOut:
     """分页检索壁纸；草稿仅管理员可见。"""

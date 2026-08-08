@@ -32,7 +32,7 @@ export default function AdminWallpapers() {
   /** 拉取草稿可见的壁纸列表 */
   async function load() {
     const [list, cats] = await Promise.all([
-      api.wallpapers({ include_drafts: true, page_size: 100, sort: "newest" }, true),
+      api.wallpapers({ include_drafts: true, page_size: 500, sort: "newest" }, true),
       api.categories(false),
     ]);
     setItems(list.items);

@@ -1,4 +1,4 @@
-/** 壁纸馆：筛选、排序、多风格展示 */
+/** 壁纸馆：筛选、排序、多风格展示与分页加载 */
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
@@ -9,13 +9,17 @@ import ViewSwitch from "../components/ViewSwitch";
 import WallpaperGallery from "../components/WallpaperGallery";
 import Lightbox from "../components/Lightbox";
 
+const PAGE_SIZE = 48;
+
 /** 主浏览页：分类 + 搜索 + 四种布局 */
 export default function GalleryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<Wallpaper[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [category, setCategory] = useState(searchParams.get("category") || "");
   const [sort, setSort] = useState<SortKey>("newest");
   const [query, setQuery] = useState("");
@@ -41,12 +45,14 @@ export default function GalleryPage() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setPage(1);
     api
       .wallpapers({
         category: category || undefined,
         q: deferredQuery || undefined,
         sort,
-        page_size: 48,
+        page: 1,
+        page_size: PAGE_SIZE,
       })
       .then((res) => {
         if (cancelled) return;
@@ -61,6 +67,26 @@ export default function GalleryPage() {
     };
   }, [category, deferredQuery, sort]);
 
+  /** 加载下一页壁纸 */
+  async function loadMore() {
+    const next = page + 1;
+    setLoadingMore(true);
+    try {
+      const res = await api.wallpapers({
+        category: category || undefined,
+        q: deferredQuery || undefined,
+        sort,
+        page: next,
+        page_size: PAGE_SIZE,
+      });
+      setItems((prev) => [...prev, ...res.items]);
+      setTotal(res.total);
+      setPage(next);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   /** 切换展示风格并持久化 */
   function changeMode(next: ViewMode) {
     startTransition(() => {
@@ -68,6 +94,8 @@ export default function GalleryPage() {
       localStorage.setItem("muse_view_mode", next);
     });
   }
+
+  const hasMore = items.length < total;
 
   return (
     <div className="app-shell">
@@ -77,7 +105,7 @@ export default function GalleryPage() {
           <div>
             <h2>壁纸馆</h2>
             <p>
-              共 {total} 张 · 当前风格「
+              共 {total} 张 · 已加载 {items.length} · 当前风格「
               {{ masonry: "瀑布", grid: "网格", cinema: "影院", river: "溪流" }[mode]}」
             </p>
           </div>
@@ -109,11 +137,25 @@ export default function GalleryPage() {
           {loading ? (
             <div className="loading">正在铺开画面…</div>
           ) : (
-            <WallpaperGallery
-              items={items}
-              mode={mode}
-              onOpen={(_, index) => setOpenIndex(index)}
-            />
+            <>
+              <WallpaperGallery
+                items={items}
+                mode={mode}
+                onOpen={(_, index) => setOpenIndex(index)}
+              />
+              {hasMore && (
+                <div style={{ display: "flex", justifyContent: "center", marginTop: "1.5rem" }}>
+                  <button
+                    type="button"
+                    className="solid-btn"
+                    disabled={loadingMore}
+                    onClick={loadMore}
+                  >
+                    {loadingMore ? "加载中…" : `加载更多（还剩 ${total - items.length}）`}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
