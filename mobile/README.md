@@ -52,3 +52,16 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 说明：Cursor 内置生图不能被 APK/后端直接调用，运行时使用服务端配置的 Pollinations 文生图。
 
+## 发布 Release APK
+
+```bash
+# 准备 keystore.properties（勿提交）
+cp keystore.properties.example keystore.properties  # 或自行填写
+
+export ANDROID_HOME=$HOME/android-sdk
+./scripts/build-release.sh
+# 产物: dist/muse-walls-v1.0.0.apk
+```
+
+可通过 GitHub Releases 下载正式包。
+

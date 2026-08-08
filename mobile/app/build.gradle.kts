@@ -1,8 +1,22 @@
 // 幕色 App 模块：Compose UI + 网络 + 壁纸能力
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
+
+/** 读取签名配置（keystore.properties 或环境变量） */
+fun loadSigningProps(): Properties {
+    val props = Properties()
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) {
+        file.inputStream().use { props.load(it) }
+    }
+    return props
+}
+
+val signingProps = loadSigningProps()
 
 android {
     namespace = "com.muse.walls"
@@ -22,6 +36,18 @@ android {
         )
     }
 
+    signingConfigs {
+        create("release") {
+            val store = signingProps.getProperty("storeFile")
+            if (store != null) {
+                storeFile = rootProject.file(store)
+                storePassword = signingProps.getProperty("storePassword")
+                keyAlias = signingProps.getProperty("keyAlias")
+                keyPassword = signingProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -29,6 +55,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             applicationIdSuffix = ".debug"

@@ -21,6 +21,9 @@ backend/uploads/*
 
 # Android
 mobile/local.properties
+mobile/keystore.properties
+mobile/**/*.jks
+mobile/**/*.keystore
 mobile/.gradle/
 mobile/**/build/
 mobile/*.iml
