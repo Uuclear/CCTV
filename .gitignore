@@ -1,0 +1,20 @@
+# 依赖与构建产物
+node_modules/
+frontend/dist/
+backend/.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# 本地数据与上传
+backend/muse.db
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# 环境与编辑器
+.env
+.DS_Store
+.idea/
+.vscode/
+*.log
