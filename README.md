@@ -53,3 +53,17 @@ PYTHONPATH=. python scripts/bulk_seed_wallpapers.py --count 2000
 ```
 
 图片使用 `picsum.photos` 确定性外链（按 seed 生成），会均匀分配到各分类。可重复执行以继续追加。
+
+## Android APK
+
+手机端工程在 `mobile/`，可连接同一服务端并一键设置桌面/锁屏壁纸。
+
+```bash
+export ANDROID_HOME=$HOME/android-sdk
+cd mobile && ./gradlew :app:assembleDebug
+# 产物: mobile/app/build/outputs/apk/debug/app-debug.apk
+# 或: mobile/dist/muse-walls-debug.apk
+```
+
+安装后在 App 内填写服务端 Base URL（如 Cloudflare 隧道地址）。详见 [mobile/README.md](mobile/README.md)。
+

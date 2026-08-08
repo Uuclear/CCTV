@@ -18,3 +18,11 @@ backend/uploads/*
 .idea/
 .vscode/
 *.log
+
+# Android
+mobile/local.properties
+mobile/.gradle/
+mobile/**/build/
+mobile/*.iml
+*.apk
+!mobile/dist/*.apk
