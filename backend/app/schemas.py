@@ -1,183 +1,151 @@
-"""Pydantic schemas."""
+# Pydantic 请求/响应模型
 from datetime import datetime
-from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
-
-
-class ProjectCreate(BaseModel):
-    name: str = Field(..., min_length=1, max_length=256)
-    client_org: Optional[str] = None
-    build_org: Optional[str] = None
-    supervision_org: Optional[str] = None
-    design_org: Optional[str] = None
-    construction_org: Optional[str] = None
-    project_code: Optional[str] = None
-    report_no: Optional[str] = None
-    road_name: Optional[str] = None
-    scope_text: Optional[str] = None
-    contact_name: Optional[str] = None
-    contact_phone: Optional[str] = None
-    site_address: Optional[str] = None
-    inspection_org: Optional[str] = None
-    site_manager: Optional[str] = None
-    report_author: Optional[str] = None
-    qc_manager: Optional[str] = None
-    k_value_default: Optional[int] = Field(None, ge=0, le=10)
+from pydantic import BaseModel, Field
 
 
-class ProjectRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class TokenOut(BaseModel):
+    """登录成功返回的访问令牌。"""
+
+    access_token: str
+    token_type: str = "bearer"
+
+
+class LoginIn(BaseModel):
+    """管理员登录请求。"""
+
+    username: str
+    password: str
+
+
+class CategoryIn(BaseModel):
+    """分类创建/更新入参。"""
+
+    name: str = Field(min_length=1, max_length=64)
+    slug: str = Field(min_length=1, max_length=64)
+    description: str = ""
+    cover_url: str = ""
+    sort_order: int = 0
+    is_active: bool = True
+
+
+class CategoryOut(BaseModel):
+    """分类对外输出。"""
 
     id: int
     name: str
-    client_org: Optional[str]
-    build_org: Optional[str]
-    supervision_org: Optional[str]
-    design_org: Optional[str]
-    construction_org: Optional[str]
-    project_code: Optional[str]
-    report_no: Optional[str]
-    road_name: Optional[str]
-    scope_text: Optional[str]
-    contact_name: Optional[str]
-    contact_phone: Optional[str]
-    site_address: Optional[str]
-    inspection_org: Optional[str]
-    site_manager: Optional[str]
-    report_author: Optional[str]
-    qc_manager: Optional[str]
-    k_value_default: Optional[int]
+    slug: str
+    description: str
+    cover_url: str
+    sort_order: int
+    is_active: bool
+    wallpaper_count: int = 0
     created_at: datetime
 
-
-class ProjectUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=256)
-    client_org: Optional[str] = None
-    build_org: Optional[str] = None
-    supervision_org: Optional[str] = None
-    design_org: Optional[str] = None
-    construction_org: Optional[str] = None
-    project_code: Optional[str] = None
-    report_no: Optional[str] = None
-    road_name: Optional[str] = None
-    scope_text: Optional[str] = None
-    contact_name: Optional[str] = None
-    contact_phone: Optional[str] = None
-    site_address: Optional[str] = None
-    inspection_org: Optional[str] = None
-    site_manager: Optional[str] = None
-    report_author: Optional[str] = None
-    qc_manager: Optional[str] = None
-    k_value_default: Optional[int] = Field(None, ge=0, le=10)
+    model_config = {"from_attributes": True}
 
 
-class SegmentCreate(BaseModel):
-    original_filename: Optional[str] = None
-    display_name: Optional[str] = None
-    video_relpath: Optional[str] = None
-    preview_frame_relpath: Optional[str] = None
-    chain_start_label: Optional[str] = None
-    chain_end_label: Optional[str] = None
-    pipe_system: Optional[str] = None
-    diameter_mm: Optional[int] = Field(None, ge=0)
-    pipe_length_m: Optional[float] = Field(None, ge=0)
-    pipe_material: Optional[str] = None
-    repair_index: Optional[float] = None
-    remark: Optional[str] = None
-    inspection_date: Optional[str] = None
+class WallpaperIn(BaseModel):
+    """壁纸创建/更新入参。"""
+
+    title: str = Field(min_length=1, max_length=160)
+    slug: str = ""
+    description: str = ""
+    image_url: str = ""
+    thumb_url: str = ""
+    width: int = 1920
+    height: int = 1080
+    tags: str = ""
+    palette: str = "#1a2332"
+    style_hint: str = "soft"
+    is_featured: bool = False
+    is_published: bool = True
+    category_id: int | None = None
 
 
-class SegmentUpdate(BaseModel):
-    display_name: Optional[str] = None
-    video_relpath: Optional[str] = None
-    preview_frame_relpath: Optional[str] = None
-    chain_start_label: Optional[str] = None
-    chain_end_label: Optional[str] = None
-    pipe_system: Optional[str] = None
-    diameter_mm: Optional[int] = None
-    pipe_length_m: Optional[float] = None
-    pipe_material: Optional[str] = None
-    repair_index: Optional[float] = None
-    remark: Optional[str] = None
-    inspection_date: Optional[str] = None
-
-
-class SegmentRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class WallpaperOut(BaseModel):
+    """壁纸对外输出。"""
 
     id: int
-    project_id: int
-    original_filename: Optional[str]
-    display_name: Optional[str]
-    video_relpath: Optional[str]
-    preview_frame_relpath: Optional[str]
-    preview_sample_time_sec: Optional[float] = None
-    chain_start_label: Optional[str]
-    chain_end_label: Optional[str]
-    pipe_system: Optional[str]
-    diameter_mm: Optional[int]
-    pipe_length_m: Optional[float]
-    pipe_material: Optional[str]
-    repair_index: Optional[float]
-    remark: Optional[str]
-    inspection_date: Optional[str]
-    parse_confidence: Optional[float]
-    parse_warnings: Optional[str]
-    ri: Optional[float]
-    mi: Optional[float]
-    ri_grade: Optional[str]
-    mi_grade: Optional[str]
+    title: str
+    slug: str
+    description: str
+    image_url: str
+    thumb_url: str
+    width: int
+    height: int
+    tags: str
+    palette: str
+    style_hint: str
+    downloads: int
+    views: int
+    likes: int
+    is_featured: bool
+    is_published: bool
+    category_id: int | None
+    category_name: str | None = None
+    category_slug: str | None = None
     created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
 
 
-class SegmentSummaryRead(SegmentRead):
-    defect_count: int = 0
-    defect_summary: Optional[str] = None
+class WallpaperListOut(BaseModel):
+    """壁纸分页列表。"""
+
+    total: int
+    items: list[WallpaperOut]
 
 
-class DefectCreate(BaseModel):
-    defect_code: str = Field(..., min_length=1, max_length=64)
-    level: int = Field(1, ge=1, le=4)
-    kind: Literal["structural", "functional"] = "structural"
-    clock_position: Optional[str] = None
-    distance_m: Optional[float] = None
-    note: Optional[str] = None
+class StatsOut(BaseModel):
+    """后台概览统计。"""
+
+    wallpaper_count: int
+    published_count: int
+    featured_count: int
+    category_count: int
+    total_views: int
+    total_downloads: int
+    total_likes: int
+    wish_count: int = 0
+    wish_done_count: int = 0
 
 
-class DefectRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class WishIn(BaseModel):
+    """提交 AI 壁纸许愿（JSON：文生图或外链图生图）。"""
+
+    prompt: str = Field(min_length=2, max_length=1200)
+    author_name: str = Field(default="匿名", max_length=64)
+    mode: str = Field(default="txt2img", pattern="^(txt2img|img2img)$")
+    source_image_url: str = ""
+    width: int = Field(default=1920, ge=512, le=2560)
+    height: int = Field(default=1080, ge=512, le=2560)
+
+
+class WishOut(BaseModel):
+    """许愿对外输出。"""
 
     id: int
-    segment_id: int
-    defect_code: str
-    level: int
-    kind: str
-    clock_position: Optional[str]
-    distance_m: Optional[float]
-    note: Optional[str]
+    prompt: str
+    author_name: str
+    mode: str = "txt2img"
+    status: str
+    width: int
+    height: int
+    provider: str
+    source_image_url: str = ""
+    image_url: str
+    error_message: str
+    wallpaper_id: int | None
     created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
 
 
-class ExtractPreviewBody(BaseModel):
-    """Optional overrides for ffmpeg preview."""
+class WishListOut(BaseModel):
+    """许愿列表。"""
 
-    margin_sec: float = Field(1.0, ge=0.0, le=600.0)
-    seed: Optional[int] = None
-    source_absolute: Optional[str] = None
-    """Absolute path on server (must be under repo or files_dir). Dev / LAN convenience."""
-
-
-class SegmentReadWithSample(SegmentRead):
-    sample_time_sec: Optional[float] = None
-
-
-class OcrPreviewOut(BaseModel):
-    raw_text: str
-    suggested_chain_start: Optional[str] = None
-    suggested_chain_end: Optional[str] = None
-    suggested_diameter_mm: Optional[int] = None
-    suggested_pipe_material: Optional[str] = None
-    suggested_inspection_date: Optional[str] = None
-    parse: Optional[dict] = None
-    engine: str = "none"
+    total: int
+    items: list[WishOut]

@@ -1,84 +1,89 @@
-"""ORM models."""
+# 领域模型：管理员、分类、壁纸
 from datetime import datetime
-from typing import Optional
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-
-class Base(DeclarativeBase):
-    pass
+from app.db import Base
 
 
-class Project(Base):
-    __tablename__ = "projects"
+class AdminUser(Base):
+    """后台管理员账号。"""
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String(256), index=True)
-    client_org: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
-    build_org: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
-    supervision_org: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
-    design_org: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
-    construction_org: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
-    project_code: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    report_no: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    road_name: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
-    scope_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    contact_name: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    contact_phone: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    site_address: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
-    inspection_org: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
-    site_manager: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    report_author: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    qc_manager: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    k_value_default: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=3)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __tablename__ = "admin_users"
 
-    segments: Mapped[list["Segment"]] = relationship("Segment", back_populates="project", cascade="all, delete-orphan")
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
-class Segment(Base):
-    __tablename__ = "segments"
+class Category(Base):
+    """壁纸分类。"""
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
-    original_filename: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
-    display_name: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
-    video_relpath: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
-    preview_frame_relpath: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
-    preview_sample_time_sec: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    chain_start_label: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    chain_end_label: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    pipe_system: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
-    diameter_mm: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    pipe_length_m: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    pipe_material: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    repair_index: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    remark: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    inspection_date: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
-    parse_confidence: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    parse_warnings: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    ri: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    mi: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    ri_grade: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
-    mi_grade: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __tablename__ = "categories"
 
-    project: Mapped["Project"] = relationship("Project", back_populates="segments")
-    defects: Mapped[list["Defect"]] = relationship("Defect", back_populates="segment", cascade="all, delete-orphan")
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(64), unique=True)
+    slug: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    description: Mapped[str] = mapped_column(Text, default="")
+    cover_url: Mapped[str] = mapped_column(String(512), default="")
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    wallpapers: Mapped[list["Wallpaper"]] = relationship(back_populates="category")
 
 
-class Defect(Base):
-    __tablename__ = "defects"
+class Wallpaper(Base):
+    """壁纸条目。"""
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    segment_id: Mapped[int] = mapped_column(ForeignKey("segments.id", ondelete="CASCADE"), index=True)
-    defect_code: Mapped[str] = mapped_column(String(64))
-    level: Mapped[int] = mapped_column(Integer, default=1)
-    kind: Mapped[str] = mapped_column(String(16), default="structural")
-    clock_position: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
-    distance_m: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __tablename__ = "wallpapers"
 
-    segment: Mapped["Segment"] = relationship("Segment", back_populates="defects")
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(160))
+    slug: Mapped[str] = mapped_column(String(180), unique=True, index=True)
+    description: Mapped[str] = mapped_column(Text, default="")
+    image_url: Mapped[str] = mapped_column(String(512))
+    thumb_url: Mapped[str] = mapped_column(String(512), default="")
+    width: Mapped[int] = mapped_column(Integer, default=1920)
+    height: Mapped[int] = mapped_column(Integer, default=1080)
+    tags: Mapped[str] = mapped_column(String(255), default="")
+    palette: Mapped[str] = mapped_column(String(64), default="#1a2332")
+    style_hint: Mapped[str] = mapped_column(String(32), default="soft")
+    downloads: Mapped[int] = mapped_column(Integer, default=0)
+    views: Mapped[int] = mapped_column(Integer, default=0)
+    likes: Mapped[int] = mapped_column(Integer, default=0)
+    is_featured: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=True)
+    category_id: Mapped[int | None] = mapped_column(ForeignKey("categories.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    category: Mapped[Category | None] = relationship(back_populates="wallpapers")
+
+
+class Wish(Base):
+    """AI 壁纸许愿条目。"""
+
+    __tablename__ = "wishes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    prompt: Mapped[str] = mapped_column(Text)
+    author_name: Mapped[str] = mapped_column(String(64), default="匿名")
+    # txt2img=文生图，img2img=图生图
+    mode: Mapped[str] = mapped_column(String(16), default="txt2img")
+    status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
+    width: Mapped[int] = mapped_column(Integer, default=1920)
+    height: Mapped[int] = mapped_column(Integer, default=1080)
+    provider: Mapped[str] = mapped_column(String(64), default="pollinations")
+    source_image_url: Mapped[str] = mapped_column(String(512), default="")
+    image_url: Mapped[str] = mapped_column(String(512), default="")
+    error_message: Mapped[str] = mapped_column(Text, default="")
+    wallpaper_id: Mapped[int | None] = mapped_column(ForeignKey("wallpapers.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )

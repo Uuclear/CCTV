@@ -1,24 +1,25 @@
-"""Async SQLAlchemy session and engine."""
-from collections.abc import AsyncGenerator
+# 数据库引擎与会话工厂
+from collections.abc import Generator
 
-from sqlalchemy import pool
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import settings
 
-_eng_kwargs = {}
-if ":memory:" in settings.database_url:
-    _eng_kwargs["connect_args"] = {"check_same_thread": False}
-    _eng_kwargs["poolclass"] = pool.StaticPool
 
-engine = create_async_engine(
-    settings.database_url,
-    echo=False,
-    **_eng_kwargs,
-)
-SessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
+engine = create_engine(settings.database_url, connect_args=connect_args)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with SessionLocal() as session:
-        yield session
+class Base(DeclarativeBase):
+    """SQLAlchemy 声明式基类。"""
+
+
+def get_db() -> Generator[Session, None, None]:
+    """提供请求级数据库会话。"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
