@@ -26,8 +26,8 @@ android {
         applicationId = "com.muse.walls"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.0.1"
         // 默认指向当前云端临时公网隧道（可在 App 内修改）
         buildConfigField(
             "String",

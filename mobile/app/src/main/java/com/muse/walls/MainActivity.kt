@@ -67,12 +67,16 @@ private fun MuseNav(vm: AppViewModel) {
             WishPoolScreen(
                 prompt = vm.wishPrompt,
                 author = vm.wishAuthor,
+                mode = vm.wishMode,
+                sourceUrl = vm.wishSourceUrl,
                 wishes = vm.wishes,
                 total = vm.wishTotal,
                 submitting = vm.wishSubmitting,
                 message = vm.wishMessage,
                 onPromptChange = vm::onWishPromptChange,
                 onAuthorChange = vm::onWishAuthorChange,
+                onModeChange = vm::onWishModeChange,
+                onSourceUrlChange = vm::onWishSourceUrlChange,
                 onSubmit = vm::submitWish,
                 onRetry = vm::retryWish,
                 onBack = {

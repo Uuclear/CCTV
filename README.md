@@ -56,16 +56,28 @@ PYTHONPATH=. python scripts/bulk_seed_wallpapers.py --count 2000
 
 ## AI 壁纸许愿池
 
-网页 `/wish` 与 APK 内「许愿池」可提交 Prompt，后端异步生成壁纸。
+网页 `/wish` 与 APK 内「许愿池」支持：
 
-**关于 Cursor 生图：** Cursor 的 `GenerateImage` 只在 Cloud Agent 对话侧可用，**网站/APK 后端无法直接调用**。  
-运行时使用 [Pollinations](https://pollinations.ai) 文生图接口兑现愿望，成功后自动进入「AI许愿」分类。
+| 模式 | 说明 | 引擎 |
+|------|------|------|
+| 文生图 `txt2img` | 只填 Prompt | Pollinations flux |
+| 图生图 `img2img` | Prompt + 参考图（上传或 URL） | Pollinations kontext |
+
+### 能否关联 Cursor 生图？
+
+**不能。** Cursor 的 `GenerateImage` 只是 Cloud Agent 对话里的内部工具，没有给业务后端/网站/APK 调用的官方 API，因此无法「接到 Cursor 上」。  
+许愿池用可 HTTP 调用的 Pollinations 完成文生图/图生图；成功后自动进入「AI许愿」分类。
 
 ```bash
-# 提交许愿
+# 文生图
 curl -X POST http://127.0.0.1:8000/api/wishes \
   -H 'Content-Type: application/json' \
-  -d '{"prompt":"neon rain city night wallpaper","width":1920,"height":1080}'
+  -d '{"prompt":"neon rain city night wallpaper","mode":"txt2img","width":1080,"height":1920}'
+
+# 图生图（外链参考图）
+curl -X POST http://127.0.0.1:8000/api/wishes \
+  -H 'Content-Type: application/json' \
+  -d '{"prompt":"make it cyberpunk night","mode":"img2img","source_image_url":"https://picsum.photos/seed/muse/800/1200","width":1080,"height":1920}'
 ```
 
 ## Android APK

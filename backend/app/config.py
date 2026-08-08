@@ -20,12 +20,16 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
         "http://localhost:4173",
     ]
-    # AI 许愿池：运行时文生图（Cursor 生图为 Agent 工具，后端无法直连）
+    # AI 许愿池：运行时文生图/图生图（Cursor 生图为 Agent 工具，后端无法直连）
     ai_image_provider: str = "pollinations"
     ai_image_model: str = "flux"
+    # 图生图模型；kontext 需 enter.pollinations.ai，免费档可用 flux+image
+    ai_img2img_model: str = "flux"
     ai_default_width: int = 1920
     ai_default_height: int = 1080
     ai_wish_auto_publish: bool = True
+    # 图生图时供外网拉取 /uploads 参考图的公网根地址
+    public_base_url: str = "https://already-tried-issue-mem.trycloudflare.com"
 
 
 settings = Settings()

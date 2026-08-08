@@ -57,10 +57,12 @@ export interface Wish {
   id: number;
   prompt: string;
   author_name: string;
+  mode: "txt2img" | "img2img" | string;
   status: "pending" | "generating" | "done" | "failed" | string;
   width: number;
   height: number;
   provider: string;
+  source_image_url: string;
   image_url: string;
   error_message: string;
   wallpaper_id: number | null;

@@ -1,6 +1,9 @@
-# AI 壁纸生成：Pollinations 文生图（运行时可调用）
-"""说明：Cursor 内置 GenerateImage 仅供 Cloud Agent 对话使用，
-应用后端无法调用；此处使用 Pollinations 公网文生图接口完成许愿兑现。"""
+# AI 壁纸生成：文生图 / 图生图（Pollinations）
+"""Cursor 的 GenerateImage 仅供 Cloud Agent 对话使用，应用后端无法调用。
+许愿池运行时使用 Pollinations：
+- txt2img: flux 文生图
+- img2img: kontext 图生图（需参考图 URL）
+"""
 
 from __future__ import annotations
 
@@ -17,8 +20,8 @@ from app.models import Category, Wallpaper, Wish
 from app.services.wallpaper_ops import slugify
 
 
-def build_pollinations_url(prompt: str, width: int, height: int) -> str:
-    """构造 Pollinations 图片 URL。"""
+def build_txt2img_url(prompt: str, width: int, height: int) -> str:
+    """构造文生图 URL（flux）。"""
     text = quote(prompt.strip(), safe="")
     return (
         f"https://image.pollinations.ai/prompt/{text}"
@@ -27,9 +30,21 @@ def build_pollinations_url(prompt: str, width: int, height: int) -> str:
     )
 
 
+def build_img2img_url(prompt: str, source_image: str, width: int, height: int) -> str:
+    """构造图生图 URL（参考图 image + 选定模型）。"""
+    text = quote(prompt.strip(), safe="")
+    # 参考图 URL 原样放入查询参数（httpx/服务端会处理）
+    model = settings.ai_img2img_model
+    return (
+        f"https://image.pollinations.ai/prompt/{text}"
+        f"?model={model}&image={quote(source_image, safe='')}"
+        f"&width={width}&height={height}&nologo=true&enhance=true"
+    )
+
+
 def download_image(url: str) -> bytes:
     """下载生成结果图片字节。"""
-    with httpx.Client(timeout=120.0, follow_redirects=True) as client:
+    with httpx.Client(timeout=180.0, follow_redirects=True) as client:
         res = client.get(url)
         res.raise_for_status()
         ctype = res.headers.get("content-type", "")
@@ -63,6 +78,7 @@ def publish_wallpaper(db: Session, wish: Wish, local_url: str) -> Wallpaper:
     title = wish.prompt.strip().replace("\n", " ")
     if len(title) > 40:
         title = title[:40] + "…"
+    mode_tag = "文生图" if wish.mode != "img2img" else "图生图"
     base_slug = slugify(f"ai-{wish.id}-{title}") or f"ai-wish-{wish.id}"
     slug = base_slug
     n = 1
@@ -72,12 +88,12 @@ def publish_wallpaper(db: Session, wish: Wish, local_url: str) -> Wallpaper:
     item = Wallpaper(
         title=f"许愿·{title}",
         slug=slug,
-        description=f"AI 许愿生成：{wish.prompt}",
+        description=f"AI {mode_tag}：{wish.prompt}",
         image_url=local_url,
         thumb_url=local_url,
         width=wish.width,
         height=wish.height,
-        tags="AI,许愿,生成",
+        tags=f"AI,许愿,{mode_tag}",
         palette="#3F8F7A",
         style_hint="vivid",
         is_featured=False,
@@ -90,8 +106,8 @@ def publish_wallpaper(db: Session, wish: Wish, local_url: str) -> Wallpaper:
     return item
 
 
-def fulfill_wish(wish_id: int) -> None:
-    """后台兑现单条许愿：下载图片、落盘并可选发布。"""
+def fulfill_wish(wish_id: int, public_base: str = "") -> None:
+    """后台兑现单条许愿：文生图或图生图。"""
     db = SessionLocal()
     try:
         wish = db.get(Wish, wish_id)
@@ -102,7 +118,16 @@ def fulfill_wish(wish_id: int) -> None:
         wish.provider = settings.ai_image_provider
         db.commit()
 
-        remote = build_pollinations_url(wish.prompt, wish.width, wish.height)
+        if wish.mode == "img2img":
+            source = wish.source_image_url
+            if source.startswith("/"):
+                if not public_base:
+                    raise RuntimeError("图生图缺少公网 Base URL，无法让生图服务读取参考图")
+                source = public_base.rstrip("/") + source
+            remote = build_img2img_url(wish.prompt, source, wish.width, wish.height)
+        else:
+            remote = build_txt2img_url(wish.prompt, wish.width, wish.height)
+
         raw = download_image(remote)
         name = f"wish-{wish.id}-{uuid.uuid4().hex[:10]}.jpg"
         dest = settings.upload_dir / name
@@ -128,5 +153,4 @@ def fulfill_wish(wish_id: int) -> None:
 
 def sanitize_prompt(prompt: str) -> str:
     """轻度清洗 prompt，去掉控制字符。"""
-    text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", prompt).strip()
-    return text
+    return re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", prompt).strip()

@@ -1,4 +1,4 @@
-/** AI 壁纸许愿池：提交 Prompt 并由后端异步生成 */
+/** AI 壁纸许愿池：文生图 / 图生图 */
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
@@ -16,7 +16,10 @@ const STATUS_LABEL: Record<string, string> = {
 export default function WishPoolPage() {
   const [prompt, setPrompt] = useState("");
   const [author, setAuthor] = useState("");
-  const [ratio, setRatio] = useState("1920x1080");
+  const [mode, setMode] = useState<"txt2img" | "img2img">("txt2img");
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [ratio, setRatio] = useState("1080x1920");
   const [items, setItems] = useState<Wish[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -36,14 +39,15 @@ export default function WishPoolPage() {
     setLoading(true);
     Promise.all([load(), api.wishProvider()])
       .then(([, meta]) => {
-        setProvider(`${meta.provider} / ${meta.model}`);
+        setProvider(
+          `${meta.provider} · 文生图 ${meta.txt2img_model} / 图生图 ${meta.img2img_model}`,
+        );
         setNote(meta.note);
       })
       .catch((e) => setError(e instanceof Error ? e.message : "加载失败"))
       .finally(() => setLoading(false));
   }, []);
 
-  // 对进行中的许愿轮询状态
   useEffect(() => {
     const busy = items.some((w) => w.status === "pending" || w.status === "generating");
     if (!busy) return;
@@ -53,20 +57,37 @@ export default function WishPoolPage() {
     return () => window.clearInterval(timer);
   }, [items]);
 
-  /** 提交新许愿 */
+  /** 提交文生图或图生图许愿 */
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError("");
     try {
       const [width, height] = ratio.split("x").map(Number);
-      await api.createWish({
-        prompt,
-        author_name: author || "匿名",
-        width,
-        height,
-      });
+      if (mode === "img2img" && (file || sourceUrl)) {
+        const fd = new FormData();
+        fd.append("prompt", prompt);
+        fd.append("author_name", author || "匿名");
+        fd.append("mode", "img2img");
+        fd.append("width", String(width));
+        fd.append("height", String(height));
+        if (file) fd.append("file", file);
+        if (sourceUrl) fd.append("source_image_url", sourceUrl);
+        await api.createWishUpload(fd);
+      } else if (mode === "img2img") {
+        throw new Error("图生图请上传参考图或填写参考图 URL");
+      } else {
+        await api.createWish({
+          prompt,
+          author_name: author || "匿名",
+          mode: "txt2img",
+          width,
+          height,
+        });
+      }
       setPrompt("");
+      setFile(null);
+      setSourceUrl("");
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "提交失败");
@@ -82,7 +103,7 @@ export default function WishPoolPage() {
         <div className="section-head">
           <div>
             <h2>AI 壁纸许愿池</h2>
-            <p>写下画面愿望，后端异步生成并自动进入「AI许愿」分类 · 共 {total} 条</p>
+            <p>文生图 / 图生图 · 后端异步生成 · 共 {total} 条</p>
           </div>
           <Link className="ghost-btn" to="/gallery?category=ai-wish">
             查看 AI 分类
@@ -92,16 +113,56 @@ export default function WishPoolPage() {
         <div className="wish-layout">
           <form className="wish-form panel" onSubmit={onSubmit}>
             <h3>许下愿望</h3>
+            <div className="chip-row" style={{ marginBottom: "0.85rem" }}>
+              <button
+                type="button"
+                className={`chip ${mode === "txt2img" ? "active" : ""}`}
+                onClick={() => setMode("txt2img")}
+              >
+                文生图
+              </button>
+              <button
+                type="button"
+                className={`chip ${mode === "img2img" ? "active" : ""}`}
+                onClick={() => setMode("img2img")}
+              >
+                图生图
+              </button>
+            </div>
             <label>
               Prompt
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="例如：薄雾中的雪山湖面，电影感光线，超宽桌面壁纸，细腻写实"
+                placeholder={
+                  mode === "txt2img"
+                    ? "例如：薄雾雪山湖面，电影感光线，手机竖屏壁纸"
+                    : "例如：把这张图改成赛博朋克夜景，保留构图"
+                }
                 required
                 minLength={2}
               />
             </label>
+            {mode === "img2img" && (
+              <>
+                <label>
+                  上传参考图
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  />
+                </label>
+                <label>
+                  或参考图 URL
+                  <input
+                    value={sourceUrl}
+                    onChange={(e) => setSourceUrl(e.target.value)}
+                    placeholder="https://..."
+                  />
+                </label>
+              </>
+            )}
             <div className="wish-form-row">
               <label>
                 署名
@@ -114,21 +175,21 @@ export default function WishPoolPage() {
               <label>
                 尺寸
                 <select value={ratio} onChange={(e) => setRatio(e.target.value)}>
-                  <option value="1920x1080">横屏 1920×1080</option>
                   <option value="1080x1920">竖屏 1080×1920</option>
-                  <option value="2560x1440">2K 2560×1440</option>
+                  <option value="1920x1080">横屏 1920×1080</option>
                   <option value="1440x2560">竖屏 1440×2560</option>
+                  <option value="1024x1024">方图 1024×1024</option>
                 </select>
               </label>
             </div>
             {error && <p className="error-text">{error}</p>}
             <button className="solid-btn" type="submit" disabled={submitting}>
-              {submitting ? "许愿中…" : "投入许愿池"}
+              {submitting ? "许愿中…" : mode === "img2img" ? "图生图许愿" : "文生图许愿"}
             </button>
             <p className="wish-note">
-              生图引擎：{provider || "加载中…"}
+              引擎：{provider || "加载中…"}
               <br />
-              {note}
+              <strong style={{ color: "var(--amber)" }}>无法关联 Cursor 生图。</strong> {note}
             </p>
           </form>
 
@@ -141,7 +202,10 @@ export default function WishPoolPage() {
               <div className="wish-grid">
                 {items.map((w) => (
                   <article className="wish-card" key={w.id}>
-                    <div className="wish-status">{STATUS_LABEL[w.status] || w.status}</div>
+                    <div className="wish-status">
+                      {(w.mode === "img2img" ? "图生图 · " : "文生图 · ") +
+                        (STATUS_LABEL[w.status] || w.status)}
+                    </div>
                     {w.image_url ? (
                       <img src={w.image_url} alt={w.prompt} loading="lazy" />
                     ) : (
@@ -155,6 +219,9 @@ export default function WishPoolPage() {
                         {w.author_name} · {w.width}×{w.height}
                         {w.wallpaper_id ? ` · 壁纸 #${w.wallpaper_id}` : ""}
                       </p>
+                      {w.source_image_url && (
+                        <p className="wish-meta">参考图已附带</p>
+                      )}
                       {w.error_message && <p className="error-text">{w.error_message}</p>}
                       {(w.status === "failed" || w.status === "pending") && (
                         <button

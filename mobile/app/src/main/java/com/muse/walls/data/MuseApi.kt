@@ -94,16 +94,20 @@ class MuseApi(private val baseUrlProvider: () -> String) {
             )
         }
 
-    /** 提交许愿 */
+    /** 提交许愿（文生图 / 图生图外链） */
     suspend fun createWish(
         prompt: String,
         author: String,
+        mode: String,
+        sourceImageUrl: String,
         width: Int,
         height: Int,
     ): Wish = withContext(Dispatchers.IO) {
         val body = JSONObject()
             .put("prompt", prompt)
             .put("author_name", author)
+            .put("mode", mode)
+            .put("source_image_url", sourceImageUrl)
             .put("width", width)
             .put("height", height)
             .toString()
@@ -124,10 +128,12 @@ class MuseApi(private val baseUrlProvider: () -> String) {
         id = o.getInt("id"),
         prompt = o.getString("prompt"),
         author_name = o.optString("author_name", "匿名"),
+        mode = o.optString("mode", "txt2img"),
         status = o.optString("status", "pending"),
         width = o.optInt("width", 1920),
         height = o.optInt("height", 1080),
         provider = o.optString("provider"),
+        source_image_url = resolveUrl(o.optString("source_image_url")),
         image_url = resolveUrl(o.optString("image_url")),
         error_message = o.optString("error_message"),
         wallpaper_id = if (o.isNull("wallpaper_id")) null else o.optInt("wallpaper_id"),

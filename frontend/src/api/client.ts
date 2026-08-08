@@ -120,14 +120,20 @@ export const api = {
   /** 单条许愿 */
   wish: (id: number) => request<Wish>(`/api/wishes/${id}`),
 
-  /** 提交许愿 Prompt */
+  /** 提交许愿 Prompt（JSON） */
   createWish: (body: {
     prompt: string;
     author_name?: string;
+    mode?: "txt2img" | "img2img";
+    source_image_url?: string;
     width?: number;
     height?: number;
   }) =>
     request<Wish>("/api/wishes", { method: "POST", body: JSON.stringify(body) }),
+
+  /** 提交许愿（可上传参考图） */
+  createWishUpload: (form: FormData) =>
+    request<Wish>("/api/wishes/upload", { method: "POST", body: form }),
 
   /** 重试生成 */
   retryWish: (id: number) =>
@@ -135,7 +141,13 @@ export const api = {
 
   /** 生图提供方说明 */
   wishProvider: () =>
-    request<{ provider: string; model: string; cursor_native: boolean; note: string }>(
-      "/api/wishes/meta/provider",
-    ),
+    request<{
+      provider: string;
+      txt2img_model: string;
+      img2img_model: string;
+      modes: string[];
+      cursor_native: boolean;
+      cursor_linkable: boolean;
+      note: string;
+    }>("/api/wishes/meta/provider"),
 };

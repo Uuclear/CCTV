@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.db import Base, SessionLocal, engine
+from app.db_migrate import ensure_wish_columns
 from app.routers import auth, categories, stats, wallpapers, wishes
 from app.seed import ensure_seed
 from app.services.ai_generate import ensure_ai_category
@@ -16,6 +17,7 @@ from app.services.ai_generate import ensure_ai_category
 async def lifespan(_: FastAPI):
     """启动时建表并写入种子数据。"""
     Base.metadata.create_all(bind=engine)
+    ensure_wish_columns()
     db = SessionLocal()
     try:
         ensure_seed(db)

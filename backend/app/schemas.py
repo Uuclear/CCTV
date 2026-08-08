@@ -113,10 +113,12 @@ class StatsOut(BaseModel):
 
 
 class WishIn(BaseModel):
-    """提交 AI 壁纸许愿。"""
+    """提交 AI 壁纸许愿（JSON：文生图或外链图生图）。"""
 
     prompt: str = Field(min_length=2, max_length=1200)
     author_name: str = Field(default="匿名", max_length=64)
+    mode: str = Field(default="txt2img", pattern="^(txt2img|img2img)$")
+    source_image_url: str = ""
     width: int = Field(default=1920, ge=512, le=2560)
     height: int = Field(default=1080, ge=512, le=2560)
 
@@ -127,10 +129,12 @@ class WishOut(BaseModel):
     id: int
     prompt: str
     author_name: str
+    mode: str = "txt2img"
     status: str
     width: int
     height: int
     provider: str
+    source_image_url: str = ""
     image_url: str
     error_message: str
     wallpaper_id: int | None

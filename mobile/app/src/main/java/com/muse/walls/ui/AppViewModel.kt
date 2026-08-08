@@ -62,6 +62,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var wishAuthor by mutableStateOf("")
         private set
+    var wishMode by mutableStateOf("txt2img")
+        private set
+    var wishSourceUrl by mutableStateOf("")
+        private set
     var wishes by mutableStateOf<List<Wish>>(emptyList())
         private set
     var wishTotal by mutableStateOf(0)
@@ -245,6 +249,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         wishAuthor = value
     }
 
+    fun onWishModeChange(value: String) {
+        wishMode = value
+    }
+
+    fun onWishSourceUrlChange(value: String) {
+        wishSourceUrl = value
+    }
+
     /** 进入许愿池时加载列表并轮询 */
     fun openWishPool() {
         viewModelScope.launch {
@@ -265,9 +277,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             wishSubmitting = true
             wishMessage = null
             try {
+                if (wishMode == "img2img" && wishSourceUrl.isBlank()) {
+                    wishMessage = "图生图请填写参考图 URL"
+                    return@launch
+                }
                 api.createWish(
                     prompt = wishPrompt.trim(),
                     author = wishAuthor.ifBlank { "匿名" },
+                    mode = wishMode,
+                    sourceImageUrl = wishSourceUrl.trim(),
                     width = 1080,
                     height = 1920,
                 )

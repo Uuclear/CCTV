@@ -73,10 +73,13 @@ class Wish(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     prompt: Mapped[str] = mapped_column(Text)
     author_name: Mapped[str] = mapped_column(String(64), default="匿名")
+    # txt2img=文生图，img2img=图生图
+    mode: Mapped[str] = mapped_column(String(16), default="txt2img")
     status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
     width: Mapped[int] = mapped_column(Integer, default=1920)
     height: Mapped[int] = mapped_column(Integer, default=1080)
     provider: Mapped[str] = mapped_column(String(64), default="pollinations")
+    source_image_url: Mapped[str] = mapped_column(String(512), default="")
     image_url: Mapped[str] = mapped_column(String(512), default="")
     error_message: Mapped[str] = mapped_column(Text, default="")
     wallpaper_id: Mapped[int | None] = mapped_column(ForeignKey("wallpapers.id"), nullable=True)

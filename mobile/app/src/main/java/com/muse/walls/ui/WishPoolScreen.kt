@@ -1,6 +1,6 @@
 package com.muse.walls.ui
 
-// AI 许愿池：提交 Prompt 与查看生成进度
+// AI 许愿池：文生图 / 图生图
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -42,12 +43,16 @@ import com.muse.walls.data.Wish
 fun WishPoolScreen(
     prompt: String,
     author: String,
+    mode: String,
+    sourceUrl: String,
     wishes: List<Wish>,
     total: Int,
     submitting: Boolean,
     message: String?,
     onPromptChange: (String) -> Unit,
     onAuthorChange: (String) -> Unit,
+    onModeChange: (String) -> Unit,
+    onSourceUrlChange: (String) -> Unit,
     onSubmit: () -> Unit,
     onRetry: (Wish) -> Unit,
     onBack: () -> Unit,
@@ -73,9 +78,23 @@ fun WishPoolScreen(
         ) {
             item {
                 Text(
-                    "写下画面愿望，后端会异步生成壁纸。共 $total 条",
+                    "文生图 / 图生图。无法关联 Cursor 生图。共 $total 条",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = mode == "txt2img",
+                        onClick = { onModeChange("txt2img") },
+                        label = { Text("文生图") },
+                    )
+                    FilterChip(
+                        selected = mode == "img2img",
+                        onClick = { onModeChange("img2img") },
+                        label = { Text("图生图") },
+                    )
+                }
             }
             item {
                 OutlinedTextField(
@@ -85,6 +104,17 @@ fun WishPoolScreen(
                     label = { Text("Prompt") },
                     minLines = 3,
                 )
+            }
+            if (mode == "img2img") {
+                item {
+                    OutlinedTextField(
+                        value = sourceUrl,
+                        onValueChange = onSourceUrlChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("参考图 URL") },
+                        singleLine = true,
+                    )
+                }
             }
             item {
                 OutlinedTextField(
@@ -101,13 +131,11 @@ fun WishPoolScreen(
                     enabled = !submitting && prompt.trim().length >= 2,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(if (submitting) "许愿中…" else "投入许愿池")
+                    Text(if (submitting) "许愿中…" else if (mode == "img2img") "图生图许愿" else "文生图许愿")
                 }
             }
             if (!message.isNullOrBlank()) {
-                item {
-                    Text(message, color = MaterialTheme.colorScheme.primary)
-                }
+                item { Text(message, color = MaterialTheme.colorScheme.primary) }
             }
             items(wishes, key = { it.id }) { wish ->
                 WishCard(wish, onRetry)
@@ -125,7 +153,10 @@ private fun WishCard(wish: Wish, onRetry: (Wish) -> Unit) {
             .background(MaterialTheme.colorScheme.surface)
             .padding(12.dp),
     ) {
-        Text(statusLabel(wish.status), style = MaterialTheme.typography.labelLarge)
+        Text(
+            "${if (wish.mode == "img2img") "图生图" else "文生图"} · ${statusLabel(wish.status)}",
+            style = MaterialTheme.typography.labelLarge,
+        )
         Spacer(modifier = Modifier.height(8.dp))
         if (wish.image_url.isNotBlank()) {
             AsyncImage(
@@ -163,9 +194,7 @@ private fun WishCard(wish: Wish, onRetry: (Wish) -> Unit) {
             Text(wish.error_message, color = MaterialTheme.colorScheme.error)
         }
         if (wish.status == "failed" || wish.status == "pending") {
-            Row {
-                OutlinedButton(onClick = { onRetry(wish) }) { Text("重新生成") }
-            }
+            OutlinedButton(onClick = { onRetry(wish) }) { Text("重新生成") }
         }
     }
 }
